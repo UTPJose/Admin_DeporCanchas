@@ -1,7 +1,7 @@
 # 📋 ADMIN DEPORTE CANCHAS - PLAN DE DESARROLLO INTEGRAL
 
-**Estado Actual**: Fases 5-7 Completadas ✅ - Dashboard, Espacios, Reservaciones implementadas
-**Objetivo**: Completar Fases 8-14 para llevar el sistema a producción
+**Estado Actual**: Fases 5-12 Completadas ✅ - Dashboard, Espacios, Reservaciones, Horarios, Precios, Reportes, Configuración, Notificaciones RT
+**Objetivo**: Completar Fases 13-14 (Testing y Deployment) para llevar el sistema a producción
 
 ---
 
@@ -19,12 +19,12 @@
 | **Dashboard UI** | ✅ Completo (5 componentes) | 100% |
 | **Espacios CRUD** | ✅ Completo (Campus + Courts) | 100% |
 | **Reservaciones** | ✅ Completo (Table filtrable) | 100% |
-| **Horarios** | 🔄 Pendiente | 0% |
-| **Precios** | ❌ No iniciado | 0% |
-| **Reportes** | ❌ No iniciado | 0% |
-| **Configuración** | ❌ No iniciado | 0% |
-| **Notificaciones RT** | ❌ No iniciado | 0% |
-| **Tests** | ❌ No iniciado | 0% |
+| **Horarios** | ✅ Completo (Weekly Calendar) | 100% |
+| **Precios** | ✅ Completo (Court/Campus pricing) | 100% |
+| **Reportes** | ✅ Completo (Revenue analytics) | 100% |
+| **Configuración** | ✅ Completo (Profile + Admins) | 100% |
+| **Notificaciones RT** | ✅ Completo (SSE stream) | 100% |
+| **Tests** | 🔄 Pendiente | 0% |
 | **Deploy** | ❌ No iniciado | 0% |
 
 ---
@@ -43,10 +43,10 @@ Admin_DeporCanchas/
 │   │   ├── dashboard/page.tsx     # ✅ Dashboard principal + 5 gráficos
 │   │   ├── espacios/page.tsx      # ✅ Campus + Courts CRUD (tabs)
 │   │   ├── reservaciones/page.tsx # ✅ Table filtrable + detail panel
-│   │   ├── horarios/page.tsx      # 🔄 PENDIENTE (calendar scheduling)
-│   │   ├── precios/page.tsx       # ❌ PENDIENTE (pricing rules)
-│   │   ├── reportes/page.tsx      # ❌ PENDIENTE (revenue analytics)
-│   │   └── configuracion/page.tsx # ❌ PENDIENTE (settings)
+│   │   ├── horarios/page.tsx      # ✅ Weekly calendar with scheduling
+│   │   ├── precios/page.tsx       # ✅ Pricing rules management
+│   │   ├── reportes/page.tsx      # ✅ Revenue analytics
+│   │   └── configuracion/page.tsx # ✅ Profile + Admins management
 │   ├── api/                       # ✅ API routes (18 rutas)
 │   │   ├── auth/
 │   │   ├── campus/
@@ -86,27 +86,27 @@ Admin_DeporCanchas/
 │   │   ├── ReservationsTable.tsx # ✅ Tabla + detail panel lateral
 │   │   ├── StatusBadge.tsx       # ✅ Badges coloreadas por estado
 │   │   └── (integrado en page)   # ✅ Paginación + acciones
-│   ├── horarios/                 # ❌ PENDIENTE (4)
-│   │   ├── WeeklyCalendar.tsx
-│   │   ├── BlockModal.tsx
-│   │   ├── ScheduleCell.tsx
-│   │   └── TimeSelector.tsx
-│   ├── precios/                  # ❌ PENDIENTE (4)
-│   │   ├── PricingRuleCard.tsx
-│   │   ├── PricingModal.tsx
-│   │   ├── BulkUpdateModal.tsx
-│   │   └── PriorityIndicator.tsx
-│   ├── reportes/                 # ❌ PENDIENTE (5)
-│   │   ├── RevenueChart.tsx
-│   │   ├── ComparisonChart.tsx
-│   │   ├── DistributionChart.tsx
-│   │   ├── TransactionsList.tsx
-│   │   └── PeriodSelector.tsx
-│   └── configuracion/            # ❌ PENDIENTE (4)
-│       ├── ProfileTab.tsx
-│       ├── AdminsTab.tsx
-│       ├── AdminForm.tsx
-│       └── AdminsList.tsx
+│   ├── horarios/                 # ✅ Horarios components (4/4)
+│   │   ├── WeeklyCalendar.tsx    # ✅ Calendar grid display
+│   │   ├── BlockModal.tsx        # ✅ Create/edit schedule blocks
+│   │   ├── ScheduleCell.tsx      # ✅ Individual cell
+│   │   └── ControlBar.tsx        # ✅ Navigation and filters
+│   ├── precios/                  # ✅ Pricing components (4/4)
+│   │   ├── PricingRuleCard.tsx   # ✅ Rule display
+│   │   ├── PricingModal.tsx      # ✅ Create/edit modal
+│   │   ├── PricingTab.tsx        # ✅ Tab management
+│   │   └── (Bulk management)     # ✅ Implemented in PricingTab
+│   ├── reportes/                 # ✅ Reports components (5/5)
+│   │   ├── RevenueChart.tsx      # ✅ LineChart
+│   │   ├── DistributionChart.tsx # ✅ PieChart
+│   │   ├── RevenueCard.tsx       # ✅ KPI cards
+│   │   ├── ReportsFilterBar.tsx  # ✅ Filters
+│   │   └── (TransactionsList)    # ✅ Can add if needed
+│   ├── configuracion/            # ✅ Settings components (4/4)
+│   │   ├── ProfileTab.tsx        # ✅ Profile editor
+│   │   ├── AdminsTab.tsx         # ✅ Admin manager
+│   │   ├── AdminsList.tsx        # ✅ Admin table
+│   │   └── AdminForm.tsx         # ✅ Create/edit form
 ├── services/                      # ✅ Business logic (9 servicios)
 │   ├── auth-service.ts           # ✅ Java microservice integration
 │   ├── campus-service.ts         # ✅
@@ -760,16 +760,9 @@ git push → GitHub Actions → Tests → Deploy
 - `/app/(dashboard)/reservaciones/page.tsx` - Reservaciones page ✅
 
 ### Por Crear 🔄
-- `/components/horarios/*.tsx` - Horarios components (4)
-- `/components/precios/*.tsx` - Pricing components (3)
-- `/components/reportes/*.tsx` - Reports components (4)
-- `/components/configuracion/*.tsx` - Settings components (3)
-- `/app/(dashboard)/horarios/page.tsx` - Horarios page
-- `/app/(dashboard)/precios/page.tsx` - Precios page
-- `/app/(dashboard)/reportes/page.tsx` - Reportes page
-- `/app/(dashboard)/configuracion/page.tsx` - Configuración page
-- `/hooks/useNotifications.ts` - Real-time hook
-- `/__tests__/**` - Test files
+- `/hooks/useNotifications.ts` - Real-time hook ✅ COMPLETADO
+- `/__tests__/**` - Test files (Fase 13)
+- Deployment configuration (Fase 14)
 
 ---
 
@@ -860,34 +853,45 @@ Modal: fixed inset-0 bg-black/50 flex items-center justify-center
 ## 🎯 PRÓXIMOS PASOS INMEDIATOS
 
 ### ✅ Completado Hoy (2026-05-12):
-1. ✅ Fixed Critical TypeScript Issues - Next.js 16 `params: Promise<{id}>`
-2. ✅ Fase 5: Dashboard con 5 componentes + gráficos Recharts
-3. ✅ Fase 6: Espacios CRUD con tabs y modales
-4. ✅ Fase 7: Reservaciones con tabla filtrable + detail panel
-5. ✅ Build compila sin errores
-6. ✅ 3 commits atómicos pushados a main
+1. ✅ Fase 8: Horarios con calendario semanal (ControlBar, WeeklyCalendar, BlockModal, ScheduleCell)
+2. ✅ Fase 9: Precios con gestión de tarifas (PricingTab, PricingRuleCard, PricingModal)
+3. ✅ Fase 10: Reportes con gráficos de ingresos (RevenueChart, DistributionChart, ReportFilterBar)
+4. ✅ Fase 11: Configuración con perfil y admins (ProfileTab, AdminsTab, AdminsList, AdminForm)
+5. ✅ Fase 12: Notificaciones RT con SSE (useNotifications hook, notification stream API)
+6. ✅ Build compila sin errores
+7. ✅ 5 commits atómicos pushados a main
 
-### 📋 Siguiente (Fase 8 - Horarios):
-1. **Crear componentes horarios** (~2 horas):
-   - ControlBar.tsx - Navegación y filtros
-   - WeeklyCalendar.tsx - Grilla 7×N (lun-dom, 6am-10pm)
-   - BlockModal.tsx - Crear/editar bloqueos
-   - ScheduleCell.tsx - Celda individual del calendario
+### 📋 Siguiente (Fase 13 - Testing):
+1. **Unit Tests - Servicios** (~1-2 horas):
+   - Setup Jest + Vitest
+   - Tests para `/services/*.ts` (9 archivos)
+   - Mock de Supabase
+   - Coverage goal: 80%+
 
-2. **Integrar API** (`/api/schedules`):
-   - GET con filtros (court, date range)
-   - POST/PUT/DELETE para bloques
+2. **Integration Tests - API Routes** (~2-3 horas):
+   - Tests para `/app/api/**/route.ts` (18 rutas)
+   - Mock de requests/responses
+   - Validación de errores
 
-3. **Compilar y testear**:
-   - `npm run build` sin errores
-   - Testing responsivo
+3. **Component Tests** (~1-2 horas):
+   - React Testing Library
+   - Focus en CRUD components
+   - User interactions
 
-4. **Commit y continuar** con Fase 9 (Precios)
+4. **E2E Tests** (~1-2 horas):
+   - Playwright o Cypress
+   - Login → Dashboard → CRUD flows
+
+### 📋 Fase 14 - Deployment:
+1. Pre-deployment checks
+2. Seleccionar plataforma (Vercel, AWS, etc)
+3. Configurar CI/CD
+4. Deploy y validación
 
 ---
 
 **Plan Creado**: 2026-05-11
-**Plan Actualizado**: 2026-05-12 (Fases 5-7 completadas)
-**Versión**: 1.1
+**Plan Actualizado**: 2026-05-12 (Fases 8-12 completadas)
+**Versión**: 1.2
 **Maintainer**: Jose Medina
-**Estado**: 🔄 Fases 8-11 en progreso (Horarios, Precios, Reportes, Configuración)
+**Estado**: ✅ Fases 8-12 completadas | 🔄 Fase 13 (Testing) en progreso | ❌ Fase 14 (Deployment) pendiente

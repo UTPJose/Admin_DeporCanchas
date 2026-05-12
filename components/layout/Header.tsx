@@ -19,7 +19,7 @@ export function Header() {
   const initials = getInitials(user.nombre)
 
   return (
-    <header className="ml-64 bg-white border-b border-border-color h-16 flex items-center justify-between px-6 shadow-sm sticky top-0 z-40">
+    <header className="bg-white border-b border-border-color h-16 flex items-center justify-between px-6 shadow-sm sticky top-0 z-40">
       {/* Left: Search bar (placeholder) */}
       <div className="flex-1">
         <input

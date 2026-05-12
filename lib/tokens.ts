@@ -33,16 +33,22 @@ interface StoredUser {
 const isClient = typeof window !== 'undefined'
 
 /**
- * Save tokens to localStorage
+ * Save tokens to localStorage AND cookies
  */
 export function saveTokens(tokens: StorageToken): void {
   if (!isClient) return
 
   try {
+    // Save to localStorage
     localStorage.setItem(TOKEN_KEY, tokens.token)
     localStorage.setItem(SESSION_TOKEN_KEY, tokens.sessionToken)
     localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refreshToken)
     localStorage.setItem(TOKEN_EXPIRY_KEY, String(tokens.expiresAt))
+
+    // Also save to cookies for middleware
+    const expiresDate = new Date(tokens.expiresAt)
+    document.cookie = `${TOKEN_KEY}=${tokens.token}; path=/; expires=${expiresDate.toUTCString()}`
+    document.cookie = `${REFRESH_TOKEN_KEY}=${tokens.refreshToken}; path=/; expires=${expiresDate.toUTCString()}`
   } catch (error) {
     console.error('Error saving tokens:', error)
   }
@@ -153,17 +159,22 @@ export function getUser(): StoredUser | null {
 }
 
 /**
- * Clear all auth data
+ * Clear all auth data from localStorage AND cookies
  */
 export function clearAuthData(): void {
   if (!isClient) return
 
   try {
+    // Clear localStorage
     localStorage.removeItem(TOKEN_KEY)
     localStorage.removeItem(SESSION_TOKEN_KEY)
     localStorage.removeItem(REFRESH_TOKEN_KEY)
     localStorage.removeItem(TOKEN_EXPIRY_KEY)
     localStorage.removeItem(USER_KEY)
+
+    // Clear cookies
+    document.cookie = `${TOKEN_KEY}=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT`
+    document.cookie = `${REFRESH_TOKEN_KEY}=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT`
   } catch (error) {
     console.error('Error clearing auth data:', error)
   }

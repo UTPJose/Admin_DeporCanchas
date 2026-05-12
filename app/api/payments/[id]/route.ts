@@ -6,10 +6,11 @@ import { paymentsService } from '@/services/payments-service'
  * PUT /api/payments/[id] - Actualizar estado de pago
  */
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const id = parseInt(params.id, 10)
-    const pago = await paymentsService.getPaymentById(id)
+    const { id } = await params
+    const parsedId = parseInt(id, 10)
+    const pago = await paymentsService.getPaymentById(parsedId)
 
     if (!pago) {
       return NextResponse.json({ success: false, error: 'Pago no encontrado' }, { status: 404 })
@@ -31,16 +32,17 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const id = parseInt(params.id, 10)
+    const { id } = await params
+    const parsedId = parseInt(id, 10)
     const body = await request.json()
 
     if (!body.estado) {
       return NextResponse.json({ success: false, error: 'Estado requerido' }, { status: 400 })
     }
 
-    const updatedPago = await paymentsService.updatePaymentStatus(id, body.estado)
+    const updatedPago = await paymentsService.updatePaymentStatus(parsedId, body.estado)
 
     return NextResponse.json({
       success: true,

@@ -7,10 +7,11 @@ import { reservationsService } from '@/services/reservations-service'
  * DELETE /api/reservations/[id] - Cancelar reserva
  */
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const id = parseInt(params.id, 10)
-    const reservation = await reservationsService.getReservationById(id)
+    const { id } = await params
+    const parsedId = parseInt(id, 10)
+    const reservation = await reservationsService.getReservationById(parsedId)
 
     if (!reservation) {
       return NextResponse.json({ success: false, error: 'Reserva no encontrada' }, { status: 404 })
@@ -32,12 +33,13 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const id = parseInt(params.id, 10)
+    const { id } = await params
+    const parsedId = parseInt(id, 10)
     const body = await request.json()
 
-    const updatedReservation = await reservationsService.updateReservation(id, body)
+    const updatedReservation = await reservationsService.updateReservation(parsedId, body)
 
     return NextResponse.json({
       success: true,
@@ -55,11 +57,12 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const id = parseInt(params.id, 10)
+    const { id } = await params
+    const parsedId = parseInt(id, 10)
 
-    const cancelledReservation = await reservationsService.cancelReservation(id)
+    const cancelledReservation = await reservationsService.cancelReservation(parsedId)
 
     return NextResponse.json({
       success: true,

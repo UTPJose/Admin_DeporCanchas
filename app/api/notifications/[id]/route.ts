@@ -6,14 +6,15 @@ import { notificationsService } from '@/services/notifications-service'
  * DELETE /api/notifications/[id] - Eliminar notificación
  */
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const id = parseInt(params.id, 10)
+    const { id } = await params
+    const parsedId = parseInt(id, 10)
     const body = await request.json()
 
     if (body.action === 'mark-all-read') {
       // Marcar todas como leídas para un usuario
-      await notificationsService.markAllAsRead(id)
+      await notificationsService.markAllAsRead(parsedId)
       return NextResponse.json({
         success: true,
         message: 'Todas las notificaciones marcadas como leídas',
@@ -21,7 +22,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     }
 
     // Marcar una como leída
-    const updatedNotification = await notificationsService.markAsRead(id)
+    const updatedNotification = await notificationsService.markAsRead(parsedId)
 
     return NextResponse.json({
       success: true,
@@ -39,11 +40,12 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const id = parseInt(params.id, 10)
+    const { id } = await params
+    const parsedId = parseInt(id, 10)
 
-    await notificationsService.deleteNotification(id)
+    await notificationsService.deleteNotification(parsedId)
 
     return NextResponse.json({
       success: true,

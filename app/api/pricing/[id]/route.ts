@@ -7,10 +7,11 @@ import { pricingService } from '@/services/pricing-service'
  * DELETE /api/pricing/[id] - Eliminar tarifa
  */
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const id = parseInt(params.id, 10)
-    const tarifa = await pricingService.getTarifaById(id)
+    const { id } = await params
+    const parsedId = parseInt(id, 10)
+    const tarifa = await pricingService.getTarifaById(parsedId)
 
     if (!tarifa) {
       return NextResponse.json({ success: false, error: 'Tarifa no encontrada' }, { status: 404 })
@@ -32,12 +33,13 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const id = parseInt(params.id, 10)
+    const { id } = await params
+    const parsedId = parseInt(id, 10)
     const body = await request.json()
 
-    const updatedTarifa = await pricingService.updateTarifa(id, body)
+    const updatedTarifa = await pricingService.updateTarifa(parsedId, body)
 
     return NextResponse.json({
       success: true,
@@ -55,11 +57,12 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const id = parseInt(params.id, 10)
+    const { id } = await params
+    const parsedId = parseInt(id, 10)
 
-    await pricingService.deleteTarifa(id)
+    await pricingService.deleteTarifa(parsedId)
 
     return NextResponse.json({
       success: true,

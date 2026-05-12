@@ -1,7 +1,7 @@
 # 📋 ADMIN DEPORTE CANCHAS - PLAN DE DESARROLLO INTEGRAL
 
-**Estado Actual**: Fase 4 Completa - Arquitectura sólida, APIs implementadas, lista para UI
-**Objetivo**: Completar Fases 5-14 para llevar el sistema a producción
+**Estado Actual**: Fases 5-7 Completadas ✅ - Dashboard, Espacios, Reservaciones implementadas
+**Objetivo**: Completar Fases 8-14 para llevar el sistema a producción
 
 ---
 
@@ -16,8 +16,13 @@
 | **Base de Datos** | ✅ Completo (10 tablas) | 100% |
 | **Componentes Base** | ✅ Completo (7 componentes) | 100% |
 | **Auth Pages** | ✅ Completo (login/register) | 100% |
-| **Dashboard UI** | 🔄 Pendiente | 0% |
-| **Páginas Gestión** | ❌ No iniciado (6 páginas) | 0% |
+| **Dashboard UI** | ✅ Completo (5 componentes) | 100% |
+| **Espacios CRUD** | ✅ Completo (Campus + Courts) | 100% |
+| **Reservaciones** | ✅ Completo (Table filtrable) | 100% |
+| **Horarios** | 🔄 Pendiente | 0% |
+| **Precios** | ❌ No iniciado | 0% |
+| **Reportes** | ❌ No iniciado | 0% |
+| **Configuración** | ❌ No iniciado | 0% |
 | **Notificaciones RT** | ❌ No iniciado | 0% |
 | **Tests** | ❌ No iniciado | 0% |
 | **Deploy** | ❌ No iniciado | 0% |
@@ -35,10 +40,10 @@ Admin_DeporCanchas/
 │   │   └── callback/page.tsx
 │   ├── (dashboard)/               # 🔄 Pages protegidas del dashboard
 │   │   ├── layout.tsx             # ✅ Layout con Header + Sidebar
-│   │   ├── dashboard/page.tsx     # 🔄 Dashboard principal (placeholder)
-│   │   ├── espacios/page.tsx      # ❌ PENDIENTE (campus + canchas)
-│   │   ├── reservaciones/page.tsx # ❌ PENDIENTE (reservations table)
-│   │   ├── horarios/page.tsx      # ❌ PENDIENTE (calendar scheduling)
+│   │   ├── dashboard/page.tsx     # ✅ Dashboard principal + 5 gráficos
+│   │   ├── espacios/page.tsx      # ✅ Campus + Courts CRUD (tabs)
+│   │   ├── reservaciones/page.tsx # ✅ Table filtrable + detail panel
+│   │   ├── horarios/page.tsx      # 🔄 PENDIENTE (calendar scheduling)
 │   │   ├── precios/page.tsx       # ❌ PENDIENTE (pricing rules)
 │   │   ├── reportes/page.tsx      # ❌ PENDIENTE (revenue analytics)
 │   │   └── configuracion/page.tsx # ❌ PENDIENTE (settings)
@@ -64,38 +69,40 @@ Admin_DeporCanchas/
 │   │   ├── Sidebar.tsx
 │   │   ├── Header.tsx
 │   │   └── ProtectedLayout.tsx
-│   ├── dashboard/                 # 🔄 Dashboard components
-│   │   ├── KPICard.tsx           # ✅ Exists
-│   │   ├── ReservationChart.tsx  # ❌ PENDIENTE
-│   │   ├── RevenueChart.tsx      # ❌ PENDIENTE
-│   │   ├── EventsList.tsx        # ❌ PENDIENTE
-│   │   └── SportDistribution.tsx # ❌ PENDIENTE
-│   ├── espacios/                 # ❌ PENDIENTE
-│   │   ├── CampusList.tsx
-│   │   ├── CourtsGrid.tsx
-│   │   ├── CampusModal.tsx
-│   │   └── CourtModal.tsx
-│   ├── reservaciones/            # ❌ PENDIENTE
-│   │   ├── ReservationsTable.tsx
-│   │   ├── FilterBar.tsx
-│   │   ├── ReservationDetail.tsx
-│   │   └── StatusBadge.tsx
-│   ├── horarios/                 # ❌ PENDIENTE
+│   ├── dashboard/                 # ✅ Dashboard components (5/5)
+│   │   ├── KPICard.tsx           # ✅ KPI cards dinámicas
+│   │   ├── ReservationChart.tsx  # ✅ LineChart reservas por día
+│   │   ├── RevenueChart.tsx      # ✅ AreaChart ingresos con período selector
+│   │   ├── EventsList.tsx        # ✅ Últimas 10 eventos/notificaciones
+│   │   └── SportDistribution.tsx # ✅ PieChart reservas por deporte
+│   ├── espacios/                 # ✅ Espacios components (6/6)
+│   │   ├── CourtCard.tsx         # ✅ Card individual de cancha
+│   │   ├── CampusCard.tsx        # ✅ Card individual de campus
+│   │   ├── CourtModal.tsx        # ✅ Modal CRUD cancha
+│   │   ├── CampusModal.tsx       # ✅ Modal CRUD campus
+│   │   └── (integrado en page)   # ✅ Tabs: Por Cancha / Por Campus
+│   ├── reservaciones/            # ✅ Reservaciones components (4/4)
+│   │   ├── FilterBar.tsx         # ✅ 6 filtros (fecha, estado, email, etc)
+│   │   ├── ReservationsTable.tsx # ✅ Tabla + detail panel lateral
+│   │   ├── StatusBadge.tsx       # ✅ Badges coloreadas por estado
+│   │   └── (integrado en page)   # ✅ Paginación + acciones
+│   ├── horarios/                 # ❌ PENDIENTE (4)
 │   │   ├── WeeklyCalendar.tsx
 │   │   ├── BlockModal.tsx
 │   │   ├── ScheduleCell.tsx
 │   │   └── TimeSelector.tsx
-│   ├── precios/                  # ❌ PENDIENTE
-│   │   ├── PricingRules.tsx
-│   │   ├── PricingCard.tsx
+│   ├── precios/                  # ❌ PENDIENTE (4)
+│   │   ├── PricingRuleCard.tsx
+│   │   ├── PricingModal.tsx
 │   │   ├── BulkUpdateModal.tsx
 │   │   └── PriorityIndicator.tsx
-│   ├── reportes/                 # ❌ PENDIENTE
+│   ├── reportes/                 # ❌ PENDIENTE (5)
 │   │   ├── RevenueChart.tsx
 │   │   ├── ComparisonChart.tsx
-│   │   ├── RevenueTable.tsx
+│   │   ├── DistributionChart.tsx
+│   │   ├── TransactionsList.tsx
 │   │   └── PeriodSelector.tsx
-│   └── configuracion/            # ❌ PENDIENTE
+│   └── configuracion/            # ❌ PENDIENTE (4)
 │       ├── ProfileTab.tsx
 │       ├── AdminsTab.tsx
 │       ├── AdminForm.tsx
@@ -148,162 +155,66 @@ Admin_DeporCanchas/
 
 ---
 
-### **FASE 5: DASHBOARD PRINCIPAL** (3-4 días) 🔄 EN PROGRESO
+### **FASE 5: DASHBOARD PRINCIPAL** (3-4 días) ✅ COMPLETADA
 **Archivo**: `/app/(dashboard)/dashboard/page.tsx`
 
-**Objetivo**: Conectar datos reales de `/api/reports?type=dashboard` a la UI
+**Status**: ✅ Implementado el 2026-05-12
 
-#### Tareas:
-1. **Crear componentes KPI cards dinámicos**
-   - Archivo: `/components/dashboard/KPICard.tsx`
-   - Props: `title`, `value`, `icon`, `trend`, `trendValue`
-   - Consumir: `/api/reports?type=dashboard` → `dashboardStats`
-   - Campos a mostrar:
-     - Total Usuarios (de usuarios)
-     - Total Reservas (count de reservas)
-     - Total Ingresos (sum de pagos)
-     - Reservas Pendientes (count where estado='pendiente')
-
-2. **Crear gráfico de Reservas en la Semana**
-   - Archivo: `/components/dashboard/ReservationChart.tsx`
-   - Tipo: LineChart (Recharts)
-   - Data: Reservas por día de la semana (lunes → domingo)
-   - API: `/api/reports?type=dashboard` → `reservasXDia`
-   - Props: data array, loading state
-
-3. **Crear gráfico de Reservaciones por Deporte**
-   - Archivo: `/components/dashboard/SportDistribution.tsx`
-   - Tipo: PieChart o DonutChart (Recharts)
-   - Data: % de reservas por deporte (fútbol, vóley, básquet, tenis)
-   - API: `/api/reports?type=by-deport` → `reservesByDeport`
-   - Props: data, colors palette
-
-4. **Crear gráfico de Ingresos**
-   - Archivo: `/components/dashboard/RevenueChart.tsx`
-   - Tipo: LineChart o AreaChart
-   - Controles: Selector de período (Día/Semana/Mes)
-   - API: `/api/reports?type=revenue&period={periodo}`
-   - Props: period, data, onChange handler
-
-5. **Crear lista de Últimos Eventos**
-   - Archivo: `/components/dashboard/EventsList.tsx`
-   - Data: Últimas 10 notificaciones con iconos y timestamps
-   - API: `/api/notifications?limit=10`
-   - Props: events[], loading, onViewAll handler
-
-6. **Actualizar dashboard/page.tsx**
-   - Integrar todos los componentes
-   - Layout: Grid responsivo (KPIs fila superior, gráficos abajo)
-   - Estados de carga: Skeleton loaders
-   - Manejo de errores: Toast notifications
-   - Refresh de datos: useEffect con intervalo de 30s
-
-**Estilos**:
-- KPI Cards: bg-white, rounded-lg, p-6, shadow-sm
-- Gráficos: bg-white, rounded-lg, p-6, shadow-sm
-- Colores: Verde primario para números positivos, gris para neutrales
-- Espaciado: gap-6 entre cards
-
-**Testing**:
-- ✅ Verificar que `/api/reports?type=dashboard` retorna datos válidos
-- ✅ Comprobar que los gráficos se renderizan correctamente
-- ✅ Validar responsive design en móvil/tablet
-- ✅ Verificar skeleton loaders durante carga
-- ✅ Comprobar manejo de errores (API down)
+**Completado**:
+- [x] KPICard component (4 cards: usuarios, reservas, ingresos, pendientes)
+- [x] ReservationChart component (LineChart con Recharts)
+- [x] SportDistribution component (PieChart con distribución por deporte)
+- [x] RevenueChart component (AreaChart con selector de período)
+- [x] EventsList component (Últimas 10 eventos con timestamps)
+- [x] Dashboard page integrada con todos los componentes
+- [x] API integration con `/api/reports` 
+- [x] Auto-refresh cada 30s
+- [x] Error handling y loading states
 
 ---
 
-### **FASE 6: SECCIÓN ESPACIOS** (3-4 días)
+### **FASE 6: SECCIÓN ESPACIOS** (3-4 días) ✅ COMPLETADA
 **Archivo**: `/app/(dashboard)/espacios/page.tsx`
 
-**Objetivo**: CRUD para campus y canchas con grid visual
+**Status**: ✅ Implementado el 2026-05-12
 
-#### Componentes a crear:
-1. **Tab toggle**: "Por Cancha" | "Por Campus"
-2. **Vista 1 - Gestión por Cancha**
-   - SearchBar + Campus Filter + "Agregar Cancha" button
-   - Grid responsivo de CourtCards
-   - Cada card: imagen, nombre, tipo_deporte, cantidad_jugadores, estado badge, botones (Editar/Eliminar)
-   - Modal crear/editar: campos (campus, nombre, tipo, jugadores, estado)
-   - Modal confirmación eliminar
-
-3. **Vista 2 - Gestión por Campus**
-   - SearchBar + "Agregar Campus" button
-   - Grid de CampusCards con banner, nombre, stats (canchas, reservas)
-   - Al click en campus: expandir panel con detalles + grid de canchas
-   - Modal crear/editar campus
-
-#### Archivos:
-- `/components/espacios/CourtsTab.tsx` - Vista por cancha
-- `/components/espacios/CampusTab.tsx` - Vista por campus
-- `/components/espacios/CourtCard.tsx` - Card individual de cancha
-- `/components/espacios/CampusCard.tsx` - Card individual de campus
-- `/components/espacios/CourtModal.tsx` - Modal CRUD cancha
-- `/components/espacios/CampusModal.tsx` - Modal CRUD campus
-- `/app/(dashboard)/espacios/page.tsx` - Page principal
-
-#### API calls:
-- GET `/api/courts?campus_id=X` - Listar canchas
-- GET `/api/courts/[id]` - Detalle cancha
-- POST `/api/courts` - Crear
-- PUT `/api/courts/[id]` - Actualizar
-- DELETE `/api/courts/[id]` - Eliminar
-- GET `/api/campus` - Listar campus
-- POST `/api/campus` - Crear
-- PUT `/api/campus/[id]` - Actualizar
-- DELETE `/api/campus/[id]` - Eliminar
-
-**Testing**:
-- ✅ CRUD completo para campus
-- ✅ CRUD completo para canchas
-- ✅ Filtros funcionan correctamente
-- ✅ Modales abren/cierran correctamente
-- ✅ Validación de campos requeridos
+**Completado**:
+- [x] CourtCard component (card visual para cada cancha)
+- [x] CampusCard component (card visual para cada campus)
+- [x] CourtModal component (formulario CRUD cancha)
+- [x] CampusModal component (formulario CRUD campus)
+- [x] Espacios page con tab navigation (Por Cancha / Por Campus)
+- [x] CRUD completo: Create, Read, Update, Delete para ambas entidades
+- [x] API integration con `/api/courts` y `/api/campus`
+- [x] Confirmación antes de eliminar
+- [x] Validación de campos requeridos
+- [x] Responsive grid layout (1/2/3 columnas)
 
 ---
 
-### **FASE 7: SECCIÓN RESERVACIONES** (3-4 días)
+### **FASE 7: SECCIÓN RESERVACIONES** (3-4 días) ✅ COMPLETADA
 **Archivo**: `/app/(dashboard)/reservaciones/page.tsx`
 
-**Objetivo**: Tabla filtrable de reservaciones con detail panel
+**Status**: ✅ Implementado el 2026-05-12
 
-#### Componentes:
-1. **FilterBar**: Dropdowns para Fecha, Campus, Cancha, Precio, Estado, Email
-2. **ReservationsTable**: 
-   - Columnas: Nombre, Email, Campus, Cancha, Fecha, Hora, Precio, Estado
-   - Paginación: 10 items por página
-   - Estado badges: colores (reservado=morado, finalizado=verde, cancelado=rojo, pendiente=amarillo)
-   - Hover: fila resaltada, click abre detail
-3. **DetailPanel**: Side panel o modal con:
-   - Datos completos de la reserva
-   - Botones: Cancelar, Cambiar estado, Ver comprobante
-
-#### Archivos:
-- `/components/reservaciones/FilterBar.tsx`
-- `/components/reservaciones/ReservationsTable.tsx`
-- `/components/reservaciones/StatusBadge.tsx`
-- `/components/reservaciones/ReservationDetail.tsx`
-- `/app/(dashboard)/reservaciones/page.tsx`
-
-#### API calls:
-- GET `/api/reservations?page=X&limit=10&filters` - Listar con filtros
-- GET `/api/reservations/[id]` - Detalle
-- PUT `/api/reservations/[id]` - Cambiar estado
-- DELETE `/api/reservations/[id]` - Cancelar
-
-**Testing**:
-- ✅ Tabla muestra datos correctamente
-- ✅ Filtros funcionan combinados
-- ✅ Paginación funciona
-- ✅ Detail panel muestra info completa
-- ✅ Estado badges con colores correctos
+**Completado**:
+- [x] FilterBar component (6 filtros: fecha, estado, email, campus, precio, cancha)
+- [x] ReservationsTable component (tabla con hover effect)
+- [x] StatusBadge component (badges coloreadas: pendiente/amarillo, reservado/violeta, finalizado/verde, cancelado/rojo)
+- [x] Detail panel lateral (información completa de reserva)
+- [x] Reservaciones page con integración completa
+- [x] API integration con `/api/reservations`
+- [x] Acciones: Cancelar, Marcar como Finalizado
+- [x] Real-time filtering con múltiples criterios
+- [x] Paginación funcional
+- [x] Responsive layout grid
 
 ---
 
-### **FASE 8: SECCIÓN HORARIOS** (3-4 días)
+### **FASE 8: SECCIÓN HORARIOS** (3-4 días) 🔄 PRÓXIMA
 **Archivo**: `/app/(dashboard)/horarios/page.tsx`
 
-**Objetivo**: Calendario semanal con reservas y bloques, permitir bloquear horarios
+**Status**: ⏳ Próxima a implementar
 
 #### Componentes:
 1. **ControlBar**: Botones prev/next, rango de fechas, selector vista (Día/Semana), filtros (Campus/Cancha)
@@ -838,19 +749,25 @@ git push → GitHub Actions → Tests → Deploy
 - `/middleware.ts` - Route protection
 - `/types/database.ts` - Database types
 - `/services/*.ts` - 9 servicios business logic
-- `/app/api/**` - 18 API routes
+- `/app/api/**` - 18 API routes (Fixed Next.js 16 types)
 - `/components/layout/*.tsx` - Layout base
 - `/components/common/*.tsx` - UI components base
+- `/components/dashboard/*.tsx` - 5 Dashboard components ✅
+- `/components/espacios/*.tsx` - 4 Espacios components ✅
+- `/components/reservaciones/*.tsx` - 3 Reservaciones components ✅
+- `/app/(dashboard)/dashboard/page.tsx` - Dashboard page ✅
+- `/app/(dashboard)/espacios/page.tsx` - Espacios page ✅
+- `/app/(dashboard)/reservaciones/page.tsx` - Reservaciones page ✅
 
 ### Por Crear 🔄
-- `/components/dashboard/*.tsx` - Dashboard components (5)
-- `/components/espacios/*.tsx` - Spaces management (4)
-- `/components/reservaciones/*.tsx` - Reservations (3)
-- `/components/horarios/*.tsx` - Schedules (4)
-- `/components/precios/*.tsx` - Pricing (3)
-- `/components/reportes/*.tsx` - Reports (4)
-- `/components/configuracion/*.tsx` - Settings (3)
-- `/app/(dashboard)/*/page.tsx` - 7 dashboard pages
+- `/components/horarios/*.tsx` - Horarios components (4)
+- `/components/precios/*.tsx` - Pricing components (3)
+- `/components/reportes/*.tsx` - Reports components (4)
+- `/components/configuracion/*.tsx` - Settings components (3)
+- `/app/(dashboard)/horarios/page.tsx` - Horarios page
+- `/app/(dashboard)/precios/page.tsx` - Precios page
+- `/app/(dashboard)/reportes/page.tsx` - Reportes page
+- `/app/(dashboard)/configuracion/page.tsx` - Configuración page
 - `/hooks/useNotifications.ts` - Real-time hook
 - `/__tests__/**` - Test files
 
@@ -942,28 +859,35 @@ Modal: fixed inset-0 bg-black/50 flex items-center justify-center
 
 ## 🎯 PRÓXIMOS PASOS INMEDIATOS
 
-### Antes de Iniciar Fase 5:
-1. **Corregir tipos dinámicos** (30 min)
-   - Verificar `/app/api/*/[id]/route.ts`
-   - Cambiar `params: {id}` → `params: Promise<{id}>`
-   - Agregar `await params` en handlers
+### ✅ Completado Hoy (2026-05-12):
+1. ✅ Fixed Critical TypeScript Issues - Next.js 16 `params: Promise<{id}>`
+2. ✅ Fase 5: Dashboard con 5 componentes + gráficos Recharts
+3. ✅ Fase 6: Espacios CRUD con tabs y modales
+4. ✅ Fase 7: Reservaciones con tabla filtrable + detail panel
+5. ✅ Build compila sin errores
+6. ✅ 3 commits atómicos pushados a main
 
-2. **Compilar y verificar** (15 min)
-   - `npm run build`
-   - `npm run type-check`
+### 📋 Siguiente (Fase 8 - Horarios):
+1. **Crear componentes horarios** (~2 horas):
+   - ControlBar.tsx - Navegación y filtros
+   - WeeklyCalendar.tsx - Grilla 7×N (lun-dom, 6am-10pm)
+   - BlockModal.tsx - Crear/editar bloqueos
+   - ScheduleCell.tsx - Celda individual del calendario
 
-3. **Crear rama de desarrollo**
-   - `git checkout -b develop`
-   - Commits diarios en esta rama
+2. **Integrar API** (`/api/schedules`):
+   - GET con filtros (court, date range)
+   - POST/PUT/DELETE para bloques
 
-4. **Iniciar FASE 5 - Dashboard**
-   - Crear `/components/dashboard/` con KPI cards
-   - Conectar a `/api/reports?type=dashboard`
-   - Testing local en `localhost:3000/dashboard`
+3. **Compilar y testear**:
+   - `npm run build` sin errores
+   - Testing responsivo
+
+4. **Commit y continuar** con Fase 9 (Precios)
 
 ---
 
 **Plan Creado**: 2026-05-11
-**Versión**: 1.0
+**Plan Actualizado**: 2026-05-12 (Fases 5-7 completadas)
+**Versión**: 1.1
 **Maintainer**: Jose Medina
-**Estado**: Listo para FASE 5 (Frontend Development)
+**Estado**: 🔄 Fases 8-11 en progreso (Horarios, Precios, Reportes, Configuración)

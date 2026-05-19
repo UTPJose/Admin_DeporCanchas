@@ -6,10 +6,12 @@
 
 ## 📍 Contexto del Proyecto
 
-- **Proyecto**: Admin DeporCanchas - Sistema de gestión de canchas deportivas
-- **Stack**: Next.js 16 + React 19 + TypeScript + Tailwind CSS v4 + Supabase  
-- **Estado**: Fase 4 completa (Backend ✅) → Fase 5+ (UI Development)
-- **Plan Referencia**: Ver `/system-reminder-the-user-provided-proud-pixel.md`
+- **Proyecto**: Admin DeporCanchas - Panel admin del sistema de reservas
+- **Stack**: Next.js 16 + React 19 + TypeScript + Tailwind v4 + Supabase + JWT custom (bcryptjs + jose)
+- **BD**: misma instancia de Supabase que `../Reservas_DeporCanchas/`. Schema canónico vive ahí.
+- **Auth**: microservicio Java Spring Boot externo (`NEXT_PUBLIC_AUTH_SERVICE_URL` + `/api/v1/auth`). El admin sólo acepta `ROLE_ADMIN`. Tokens en cookie (`Secure; SameSite=Lax`) + localStorage. La BD `usuarios` la administra Java.
+- **Estado**: Fases 5-12 completadas → Fase 13 (testing) pendiente.
+- **Plan Referencia**: `system-reminder-the-user-provided-proud-pixel.md` y `CLAUDE.md`
 
 ### ⚠️ Next.js 16 - Breaking Changes
 This version has breaking changes — APIs, conventions, and file structure may differ. Read `node_modules/next/dist/docs/` before writing code. Heed deprecation notices.
@@ -220,7 +222,7 @@ npm run test:e2e        # E2E (futuro)
 - **DB Types**: `/types/database.ts`
 - **Auth**: `/lib/auth-context.tsx`, `/middleware.ts`
 - **APIs**: Plan Fases 5-11
-- **Java Service**: `localhost:8080/api/v1/auth`
+- **Java Service**: configurado vía `NEXT_PUBLIC_AUTH_SERVICE_URL` + `/api/v1/auth`
 
 ---
 

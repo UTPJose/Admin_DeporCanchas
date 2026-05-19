@@ -9,26 +9,37 @@ export const SITE_DESCRIPTION = 'Panel administrativo para gestión de canchas d
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
 export const AUTH_SERVICE_URL = process.env.NEXT_PUBLIC_AUTH_SERVICE_URL || 'http://localhost:8080'
 
-// Roles
+// Roles — BD real solo tiene 'cliente' y 'admin'. SUPER_ADMIN / USUARIO
+// quedan como legacy para compat con UI antigua.
 export const ROLES = {
   ADMIN: 'admin',
+  CLIENTE: 'cliente',
   SUPER_ADMIN: 'super_admin',
   USUARIO: 'usuario',
 } as const
 
-// Estados
+// Estados de reserva en BD real: pendiente | pagada | cancelada | expirada.
+// Se mantienen claves legacy apuntando a los valores nuevos para no romper
+// código viejo (RESERVADO→pagada, FINALIZADO→pagada, CANCELADO→cancelada).
 export const ESTADOS_RESERVA = {
-  RESERVADO: 'reservado',
-  FINALIZADO: 'finalizado',
-  CANCELADO: 'cancelado',
   PENDIENTE: 'pendiente',
+  PAGADA: 'pagada',
+  CANCELADA: 'cancelada',
+  EXPIRADA: 'expirada',
+  // Aliases legacy
+  RESERVADO: 'pagada',
+  FINALIZADO: 'pagada',
+  CANCELADO: 'cancelada',
 } as const
 
+// Estados de pago en BD real: pendiente | exitoso | fallido | reembolsado.
 export const ESTADOS_PAGO = {
   PENDIENTE: 'pendiente',
-  COMPLETADO: 'completado',
+  EXITOSO: 'exitoso',
   FALLIDO: 'fallido',
   REEMBOLSADO: 'reembolsado',
+  // Aliases legacy
+  COMPLETADO: 'exitoso',
 } as const
 
 export const ESTADOS_CANCHA = {
@@ -51,9 +62,13 @@ export const DEPORTES = {
   TENIS: 'tenis',
 } as const
 
-// Métodos de pago
+// Métodos de pago — BD real solo soporta yape | plin | tarjeta.
+// TRANSFERENCIA / EFECTIVO quedan como legacy y no se persisten así.
 export const METODOS_PAGO = {
+  YAPE: 'yape',
+  PLIN: 'plin',
   TARJETA: 'tarjeta',
+  // Aliases legacy
   TRANSFERENCIA: 'transferencia',
   EFECTIVO: 'efectivo',
 } as const

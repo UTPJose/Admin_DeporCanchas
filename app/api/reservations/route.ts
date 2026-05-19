@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
       fecha_empieza: body.fecha_empieza,
       fecha_termina: body.fecha_termina,
       precio_total: body.precio_total,
-      estado: body.estado || 'reservado',
+      estado: body.estado || 'pendiente',
     })
 
     return NextResponse.json(

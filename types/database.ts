@@ -1,9 +1,23 @@
 /**
- * Database Types - Generados desde schema PostgreSQL de Supabase
- * Mapeo automático de tablas a tipos TypeScript
+ * Database Types — alineados con el schema real de Supabase usado por
+ * `Reservas_DeporCanchas` (cliente). Ambos proyectos comparten la misma BD.
  *
- * Basado en: schema.txt
+ * Fuente de verdad: spec del cliente y migraciones aplicadas en Supabase.
  */
+
+// ==================== ROLES ====================
+// La BD real solo tiene 'cliente' | 'admin' en tabla roles.
+// El microservicio Java los emite como 'ROLE_ADMIN' / 'ROLE_CLIENTE'.
+// El tipo acepta legacy ('super_admin', 'usuario') para no romper UI existente.
+export type RolNombre =
+  | 'cliente' | 'admin'                       // valores reales de BD
+  | 'ROLE_ADMIN' | 'ROLE_CLIENTE'             // formato Java
+  | 'super_admin' | 'usuario'                 // legacy UI
+
+export interface Rol {
+  id: number
+  nombre: 'cliente' | 'admin'
+}
 
 // ==================== CAMPUS ====================
 export interface Campus {
@@ -16,11 +30,13 @@ export interface Campus {
 }
 
 // ==================== CANCHAS DEPORTIVAS ====================
+export type TipoDeporte = 'futbol' | 'voley' | 'basquet' | 'tenis'
+
 export interface CanchaDep {
   id: number
   campus_id: number
   nombre: string
-  tipo_deporte: 'futbol' | 'voley' | 'basquet' | 'tenis'
+  tipo_deporte: TipoDeporte
   cantidad_jugadores: number
   estado: 'disponible' | 'bloqueado' | 'mantenimiento'
   created_at?: string
@@ -32,47 +48,64 @@ export interface CanchaDisponibilidad {
   id: number
   canchasdep_id: number
   dias_de_la_semana: number // 0-6 (domingo-sábado)
-  hora_abre: string // HH:MM
-  hora_cierra: string // HH:MM
+  hora_abre: string         // HH:MM
+  hora_cierra: string       // HH:MM
 }
 
 // ==================== USUARIOS ====================
+// BD real: id, nombre, email, clave_hash, rol_id (FK roles), celular,
+// dni (varchar(8) UNIQUE, nullable), creado_en, actualizado_en, estaActivo.
+// `rol` (string) NO existe como columna; se hidrata por join a roles.nombre
+// en los services. Se mantiene opcional aquí para compat con UI existente.
 export interface Usuario {
   id: number
   nombre: string
   email: string
-  clave?: string | null
-  rol: 'admin' | 'super_admin' | 'usuario' | string
+  clave_hash?: string       // bcrypt — nunca exponer al cliente
+  rol_id?: number           // FK roles.id (real)
+  rol?: RolNombre           // hidratado por join (`roles.nombre`) o por Java
   celular?: string | null
+  dni?: string | null       // varchar(8) UNIQUE, nullable
   creado_en: string
   actualizado_en?: string | null
   estaActivo: boolean
 }
 
+export interface UsuarioConRol extends Omit<Usuario, 'clave_hash'> {
+  rol: RolNombre
+}
+
 // ==================== RESERVAS ====================
+// Estados REALES en BD: 'pendiente' | 'pagada' | 'cancelada' | 'expirada'.
+// Se mantienen los legacy ('reservado'|'finalizado'|'cancelado') en el tipo
+// para que la UI existente compile; los services siempre escriben los reales.
+export type ReservaEstado =
+  | 'pendiente' | 'pagada' | 'cancelada' | 'expirada'  // reales
+  | 'reservado' | 'finalizado' | 'cancelado'           // legacy UI
+
 export interface Reserva {
   id: number
   canchasdep_id: number
   usuarios_id: number
-  fecha_empieza: string // ISO 8601
-  fecha_termina: string // ISO 8601
-  estado: 'reservado' | 'finalizado' | 'cancelado' | 'pendiente'
+  fecha_empieza: string     // timestamptz ISO
+  fecha_termina: string     // timestamptz ISO
+  estado: ReservaEstado
   precio_total: number
+  code?: string | null      // 8 chars, único en BD real
+  expires_at?: string | null // null al pagar
   creado_en: string
-  code?: string | null
-  expires_at?: string | null
 }
 
 // ==================== TARIFAS ====================
 export interface Tarifa {
   id: number
   nombre: string
-  hora_empieza?: string | null // HH:MM
-  hora_termina?: string | null // HH:MM
-  fecha_empieza?: string | null // YYYY-MM-DD
-  fecha_termina?: string | null // YYYY-MM-DD
+  hora_empieza?: string | null
+  hora_termina?: string | null
+  fecha_empieza?: string | null
+  fecha_termina?: string | null
   precio: number
-  prioridad: number // 0-100, mayor = mayor prioridad
+  prioridad: number
 }
 
 // ==================== TARIFAS POR CANCHA ====================
@@ -84,17 +117,45 @@ export interface TarifasCanchaDep {
 }
 
 // ==================== PAGOS ====================
+// BD real: estado ∈ pendiente|exitoso|fallido|reembolsado;
+//          metodo_pago ∈ yape|plin|tarjeta. Se mantienen legacy en el tipo
+//          para compat con UI; los services siempre escriben los reales.
+export type PagoMetodo =
+  | 'yape' | 'plin' | 'tarjeta'                       // reales
+  | 'transferencia' | 'efectivo'                      // legacy UI
+
+export type PagoEstado =
+  | 'pendiente' | 'exitoso' | 'fallido' | 'reembolsado'  // reales
+  | 'completado'                                          // legacy UI
+
 export interface Pago {
   id: number
   reserva_id: number
   monto: number
-  estado: 'pendiente' | 'completado' | 'fallido' | 'reembolsado'
-  metodo_pago: 'tarjeta' | 'transferencia' | 'efectivo'
-  creado_en: string
-  receipt_url?: string | null
+  estado: PagoEstado
+  metodo_pago: PagoMetodo
+  simulated?: boolean
+
+  // Voucher (lo emite el cliente al pagar; el admin solo lo lee)
+  voucher_url?: string | null
+  voucher_serie?: string | null
+  voucher_correlativo?: number | null
+
+  // Yape/Plin
+  comprobante_yape_url?: string | null
+
+  // Tarjeta — solo se persisten estos, nunca PAN/CVV
   card_brand?: string | null
   card_last4?: string | null
-  simulated: boolean
+  titular_nombre?: string | null
+  titular_dni?: string | null
+  titular_direccion?: string | null
+  titular_fecha_nacimiento?: string | null
+
+  // Legacy / compat
+  receipt_url?: string | null   // antiguo alias de voucher_url
+
+  creado_en: string
 }
 
 // ==================== NOTIFICACIONES ====================
@@ -109,6 +170,7 @@ export interface Notificacion {
 }
 
 // ==================== HISTORIAL DE RESERVAS ====================
+// Poblado por trigger. Solo lectura desde el admin.
 export interface HistorialReserva {
   id: number
   reservas_id: number
@@ -122,7 +184,7 @@ export interface HistorialReserva {
 
 export interface ReservaConDetalles extends Reserva {
   cancha?: CanchaDep & { campus?: Campus }
-  usuario?: Usuario
+  usuario?: UsuarioConRol
   pago?: Pago | null
 }
 
@@ -159,14 +221,14 @@ export interface ReservaFilters {
   usuario_email?: string
   precio_min?: number
   precio_max?: number
-  estado?: Reserva['estado']
+  estado?: ReservaEstado
   page?: number
   limit?: number
 }
 
 export interface CanchaFilters {
   campus_id?: number
-  tipo_deporte?: CanchaDep['tipo_deporte']
+  tipo_deporte?: TipoDeporte
   estado?: CanchaDep['estado']
   page?: number
   limit?: number

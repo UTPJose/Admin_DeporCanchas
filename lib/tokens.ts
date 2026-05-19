@@ -32,23 +32,34 @@ interface StoredUser {
  */
 const isClient = typeof window !== 'undefined'
 
+// Cookies se escriben desde `document.cookie` (no se puede HttpOnly desde
+// el navegador). Por eso reforzamos con `Secure` (solo HTTPS en prod) y
+// `SameSite=Lax` (mitiga CSRF en navegación cross-site). HttpOnly real
+// requeriría que un Route Handler proxy fije la cookie con `Set-Cookie`.
+const COOKIE_FLAGS = (() => {
+  const secure =
+    typeof window !== 'undefined' && window.location.protocol === 'https:'
+      ? '; Secure'
+      : ''
+  return `; path=/; SameSite=Lax${secure}`
+})()
+
 /**
- * Save tokens to localStorage AND cookies
+ * Save tokens to localStorage AND cookies (cookies con Secure+SameSite=Lax)
  */
 export function saveTokens(tokens: StorageToken): void {
   if (!isClient) return
 
   try {
-    // Save to localStorage
     localStorage.setItem(TOKEN_KEY, tokens.token)
     localStorage.setItem(SESSION_TOKEN_KEY, tokens.sessionToken)
     localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refreshToken)
     localStorage.setItem(TOKEN_EXPIRY_KEY, String(tokens.expiresAt))
 
-    // Also save to cookies for middleware
     const expiresDate = new Date(tokens.expiresAt)
-    document.cookie = `${TOKEN_KEY}=${tokens.token}; path=/; expires=${expiresDate.toUTCString()}`
-    document.cookie = `${REFRESH_TOKEN_KEY}=${tokens.refreshToken}; path=/; expires=${expiresDate.toUTCString()}`
+    const expires = `; expires=${expiresDate.toUTCString()}`
+    document.cookie = `${TOKEN_KEY}=${tokens.token}${COOKIE_FLAGS}${expires}`
+    document.cookie = `${REFRESH_TOKEN_KEY}=${tokens.refreshToken}${COOKIE_FLAGS}${expires}`
   } catch (error) {
     console.error('Error saving tokens:', error)
   }
@@ -172,9 +183,10 @@ export function clearAuthData(): void {
     localStorage.removeItem(TOKEN_EXPIRY_KEY)
     localStorage.removeItem(USER_KEY)
 
-    // Clear cookies
-    document.cookie = `${TOKEN_KEY}=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT`
-    document.cookie = `${REFRESH_TOKEN_KEY}=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT`
+    // Clear cookies (mismas flags que al setearlas para que el navegador las matchee)
+    const expired = '; expires=Thu, 01 Jan 1970 00:00:01 GMT'
+    document.cookie = `${TOKEN_KEY}=${COOKIE_FLAGS}${expired}`
+    document.cookie = `${REFRESH_TOKEN_KEY}=${COOKIE_FLAGS}${expired}`
   } catch (error) {
     console.error('Error clearing auth data:', error)
   }

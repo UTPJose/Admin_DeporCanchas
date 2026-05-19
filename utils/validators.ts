@@ -48,7 +48,7 @@ export const reservationFormSchema = z.object({
   usuarios_id: idSchema,
   fecha_empieza: z.string().datetime(),
   fecha_termina: z.string().datetime(),
-  estado: z.enum(['reservado', 'finalizado', 'cancelado', 'pendiente']).optional(),
+  estado: z.enum(['pendiente', 'pagada', 'cancelada', 'expirada']).optional(),
   precio_total: z.number().positive(),
 })
 

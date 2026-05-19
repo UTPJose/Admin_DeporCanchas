@@ -24,13 +24,15 @@ export const reservationsService = {
           nombre,
           email,
           celular,
-          rol
+          dni,
+          rol:roles ( nombre )
         ),
         pago:pagos (
           id,
           monto,
           estado,
-          metodo_pago
+          metodo_pago,
+          voucher_url
         )
       `
     )
@@ -90,14 +92,20 @@ export const reservationsService = {
           nombre,
           email,
           celular,
-          rol
+          dni,
+          rol:roles ( nombre )
         ),
         pagos (
           id,
           monto,
           estado,
           metodo_pago,
-          receipt_url
+          voucher_url,
+          voucher_serie,
+          voucher_correlativo,
+          comprobante_yape_url,
+          card_brand,
+          card_last4
         )
       `
       )
@@ -136,10 +144,31 @@ export const reservationsService = {
   },
 
   /**
-   * Cancelar una reserva
+   * Cancelar una reserva. En BD el valor real es 'cancelada' y se libera el slot.
    */
   async cancelReservation(id: number): Promise<Reserva> {
-    return this.changeReservationStatus(id, 'cancelado')
+    const { data, error } = await supabase
+      .from('reservas')
+      .update({ estado: 'cancelada', expires_at: null })
+      .eq('id', id)
+      .select()
+      .single()
+    if (error) throw new Error(`Error al cancelar reserva: ${error.message}`)
+    return data
+  },
+
+  /**
+   * Marcar reserva como pagada (ajuste manual del admin).
+   */
+  async markAsPaid(id: number): Promise<Reserva> {
+    const { data, error } = await supabase
+      .from('reservas')
+      .update({ estado: 'pagada', expires_at: null })
+      .eq('id', id)
+      .select()
+      .single()
+    if (error) throw new Error(`Error al marcar reserva como pagada: ${error.message}`)
+    return data
   },
 
   /**
@@ -175,7 +204,7 @@ export const reservationsService = {
       .eq('canchasdep_id', courtId)
       .gte('fecha_empieza', startDate)
       .lte('fecha_termina', endDate)
-      .eq('estado', 'reservado')
+      .in('estado', ['pagada', 'pendiente'])
 
     if (error) throw new Error(`Error al obtener reservas de cancha: ${error.message}`)
     return data || []
@@ -190,7 +219,7 @@ export const reservationsService = {
       .select('precio_total')
       .gte('fecha_empieza', startDate)
       .lte('fecha_termina', endDate)
-      .eq('estado', 'finalizado')
+      .eq('estado', 'pagada')
 
     if (error) throw new Error(`Error al obtener ingresos: ${error.message}`)
 

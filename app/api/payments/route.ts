@@ -45,10 +45,17 @@ export async function POST(request: NextRequest) {
       monto: body.monto,
       estado: body.estado,
       metodo_pago: body.metodo_pago,
-      receipt_url: body.receipt_url,
+      voucher_url: body.voucher_url ?? body.receipt_url ?? null,
+      voucher_serie: body.voucher_serie ?? null,
+      voucher_correlativo: body.voucher_correlativo ?? null,
+      comprobante_yape_url: body.comprobante_yape_url ?? null,
       card_brand: body.card_brand,
       card_last4: body.card_last4,
-      simulated: body.simulated || false,
+      titular_nombre: body.titular_nombre ?? null,
+      titular_dni: body.titular_dni ?? null,
+      titular_direccion: body.titular_direccion ?? null,
+      titular_fecha_nacimiento: body.titular_fecha_nacimiento ?? null,
+      simulated: body.simulated ?? true,
     })
 
     return NextResponse.json(

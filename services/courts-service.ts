@@ -114,7 +114,7 @@ export const courtsService = {
       .from('reservas')
       .select('id, precio_total, fecha_empieza')
       .eq('canchasdep_id', id)
-      .eq('estado', 'reservado')
+      .eq('estado', 'pagada')
 
     if (error) throw new Error(`Error al obtener estadísticas: ${error.message}`)
 

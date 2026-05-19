@@ -24,7 +24,7 @@ export const reportsService = {
     const { data: reservasFinalizadas } = await supabase
       .from('reservas')
       .select('precio_total')
-      .eq('estado', 'finalizado')
+      .eq('estado', 'pagada')
 
     const totalIngresos = (reservasFinalizadas || []).reduce((sum, r) => sum + r.precio_total, 0)
 
@@ -77,7 +77,7 @@ export const reportsService = {
       .select('fecha_empieza, precio_total')
       .gte('fecha_empieza', startDate)
       .lte('fecha_empieza', endDate)
-      .eq('estado', 'finalizado')
+      .eq('estado', 'pagada')
 
     if (error) throw new Error(`Error al obtener ingresos: ${error.message}`)
 
@@ -101,7 +101,7 @@ export const reportsService = {
     const { data, error } = await supabase
       .from('reservas')
       .select('canchasdep:canchasdep_id(tipo_deporte)')
-      .eq('estado', 'reservado')
+      .in('estado', ['pagada', 'pendiente'])
 
     if (error) throw new Error(`Error al obtener reservas por deporte: ${error.message}`)
 
@@ -124,7 +124,7 @@ export const reportsService = {
     const { data, error } = await supabase
       .from('reservas')
       .select('canchasdep:canchasdep_id(nombre), precio_total')
-      .eq('estado', 'finalizado')
+      .eq('estado', 'pagada')
 
     if (error) throw new Error(`Error al obtener ingresos por cancha: ${error.message}`)
 
@@ -210,7 +210,7 @@ async function getRevenueBetweenDates(startDate: string, endDate: string): Promi
     .select('precio_total')
     .gte('fecha_empieza', startDate)
     .lte('fecha_empieza', endDate)
-    .eq('estado', 'finalizado')
+    .eq('estado', 'pagada')
 
   return (data || []).reduce((sum, r) => sum + r.precio_total, 0)
 }

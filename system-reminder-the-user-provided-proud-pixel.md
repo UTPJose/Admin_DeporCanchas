@@ -12,7 +12,7 @@
 | **Arquitectura & Setup** | ✅ Completo | 100% |
 | **API Routes** | ✅ Completo (18 rutas) | 100% |
 | **Service Layer** | ✅ Completo (9 servicios) | 100% |
-| **Autenticación** | ✅ Completo (Java + JWT) | 100% |
+| **Autenticación** | ✅ Microservicio Java externo (`/api/v1/auth`) | 100% |
 | **Base de Datos** | ✅ Completo (10 tablas) | 100% |
 | **Componentes Base** | ✅ Completo (7 componentes) | 100% |
 | **Auth Pages** | ✅ Completo (login/register) | 100% |
@@ -108,7 +108,7 @@ Admin_DeporCanchas/
 │   │   ├── AdminsList.tsx        # ✅ Admin table
 │   │   └── AdminForm.tsx         # ✅ Create/edit form
 ├── services/                      # ✅ Business logic (9 servicios)
-│   ├── auth-service.ts           # ✅ Java microservice integration
+│   ├── auth-service.ts           # ✅ Cliente del microservicio Java Spring Boot
 │   ├── campus-service.ts         # ✅
 │   ├── courts-service.ts         # ✅
 │   ├── reservations-service.ts   # ✅
@@ -150,7 +150,7 @@ Admin_DeporCanchas/
 - [x] Arquitectura sólida implementada
 - [x] 18 API routes funcionando
 - [x] 9 servicios completamente integrados
-- [x] Autenticación con Java microservice operativa
+- [x] Autenticación con microservicio Java Spring Boot operativa (cliente HTTP en `services/auth-service.ts`)
 - [x] 10 tablas de base de datos en Supabase
 
 ---
@@ -200,7 +200,7 @@ Admin_DeporCanchas/
 **Completado**:
 - [x] FilterBar component (6 filtros: fecha, estado, email, campus, precio, cancha)
 - [x] ReservationsTable component (tabla con hover effect)
-- [x] StatusBadge component (badges coloreadas: pendiente/amarillo, reservado/violeta, finalizado/verde, cancelado/rojo)
+- [x] StatusBadge component (estados reales del schema: `pendiente`/amarillo, `pagada`/verde, `cancelada`/rojo, `expirada`/gris)
 - [x] Detail panel lateral (información completa de reserva)
 - [x] Reservaciones page con integración completa
 - [x] API integration con `/api/reservations`
@@ -447,7 +447,7 @@ Admin_DeporCanchas/
 - [ ] Tests pasando: `npm run test`
 - [ ] Variables de entorno configuradas (`.env.production`)
 - [ ] Supabase RLS habilitado y políticas configuradas
-- [ ] Java microservice accesible desde servidor de producción
+- [ ] Microservicio Java accesible desde servidor de producción y misma instancia Supabase que el cliente
 - [ ] CORS configurado correctamente
 
 #### 14.2 Deployment Options
@@ -519,7 +519,7 @@ Admin_DeporCanchas/
 - ✅ **Migrations**: Versionadas en Supabase
 
 ### 7. **Autenticación**
-- ✅ **Java Microservice**: Endpoint externo en `localhost:8080/api/v1/auth`
+- ✅ **Java Microservice**: endpoint externo configurado vía `NEXT_PUBLIC_AUTH_SERVICE_URL` + `/api/v1/auth`. El admin solo acepta `ROLE_ADMIN`.
 - ✅ **JWT**: AccessToken (1 hora) + RefreshToken (rotativo)
 - ✅ **Storage**: localStorage (CAMBIAR a httpOnly cookies en prod)
 - ✅ **Middleware**: Protege rutas `/dashboard/*` y similares
@@ -717,7 +717,7 @@ git push → GitHub Actions → Tests → Deploy
 - [ ] `npm run test` pasando todos
 - [ ] `.env.production` configurado
 - [ ] Supabase RLS habilitado
-- [ ] Java microservice accesible desde prod
+- [ ] Microservicio Java accesible desde prod + misma instancia Supabase que el cliente
 - [ ] CORS configurado
 
 ### Deployment (1 día)

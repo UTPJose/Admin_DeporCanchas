@@ -41,13 +41,18 @@ export function getStatusColor(status: string): string {
     mantenimiento: '#f59e0b',
     disponible: '#22c55e',
     bloqueado: '#ef4444',
+    pendiente: '#f59e0b',
+    pagada: '#22c55e',
+    cancelada: '#ef4444',
+    expirada: '#9ca3af',
+    exitoso: '#22c55e',
+    fallido: '#ef4444',
+    reembolsado: '#3b82f6',
+    // Aliases legacy
     reservado: '#3b82f6',
     finalizado: '#22c55e',
     cancelado: '#ef4444',
-    pendiente: '#f59e0b',
     completado: '#22c55e',
-    fallido: '#ef4444',
-    reembolsado: '#3b82f6',
   }
   return colors[status] || '#6b7280'
 }
@@ -60,13 +65,18 @@ export function getStatusBadgeClass(status: string): string {
     mantenimiento: 'bg-amber-100 text-amber-800',
     disponible: 'bg-green-100 text-green-800',
     bloqueado: 'bg-red-100 text-red-800',
+    pendiente: 'bg-amber-100 text-amber-800',
+    pagada: 'bg-green-100 text-green-800',
+    cancelada: 'bg-red-100 text-red-800',
+    expirada: 'bg-gray-100 text-gray-800',
+    exitoso: 'bg-green-100 text-green-800',
+    fallido: 'bg-red-100 text-red-800',
+    reembolsado: 'bg-blue-100 text-blue-800',
+    // Aliases legacy
     reservado: 'bg-blue-100 text-blue-800',
     finalizado: 'bg-green-100 text-green-800',
     cancelado: 'bg-red-100 text-red-800',
-    pendiente: 'bg-amber-100 text-amber-800',
     completado: 'bg-green-100 text-green-800',
-    fallido: 'bg-red-100 text-red-800',
-    reembolsado: 'bg-blue-100 text-blue-800',
   }
   return classes[status] || 'bg-gray-100 text-gray-800'
 }

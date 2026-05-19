@@ -72,7 +72,7 @@ export const paymentsService = {
    * Marcar pago como completado
    */
   async markAsCompleted(id: number): Promise<Pago> {
-    return this.updatePaymentStatus(id, 'completado')
+    return this.updatePaymentStatus(id, 'exitoso')
   },
 
   /**
@@ -110,7 +110,7 @@ export const paymentsService = {
     const { data, error } = await supabase
       .from('pagos')
       .select('metodo_pago, monto')
-      .eq('estado', 'completado')
+      .eq('estado', 'exitoso')
 
     if (error) throw new Error(`Error al obtener ingresos por método: ${error.message}`)
 
@@ -132,7 +132,7 @@ export const paymentsService = {
     const { data, error } = await supabase
       .from('pagos')
       .select('monto')
-      .eq('estado', 'completado')
+      .eq('estado', 'exitoso')
 
     if (error) throw new Error(`Error al obtener ingresos totales: ${error.message}`)
 
@@ -150,7 +150,7 @@ export const paymentsService = {
     const { data, error } = await supabase
       .from('pagos')
       .select('monto')
-      .eq('estado', 'completado')
+      .eq('estado', 'exitoso')
       .gte('creado_en', monthStart)
       .lte('creado_en', monthEnd)
 

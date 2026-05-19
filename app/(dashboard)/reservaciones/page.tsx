@@ -28,29 +28,33 @@ export default function ReservacionesPage() {
       setError(null)
 
       const params = new URLSearchParams()
-      if (filters.dateFrom) params.append('dateFrom', filters.dateFrom)
-      if (filters.dateTo) params.append('dateTo', filters.dateTo)
-      if (filters.status) params.append('status', filters.status)
-      if (filters.email) params.append('email', filters.email)
+      if (filters.dateFrom) params.append('fecha_inicio', filters.dateFrom)
+      if (filters.dateTo) params.append('fecha_fin', filters.dateTo)
+      if (filters.status) params.append('estado', filters.status)
+      if (filters.email) params.append('usuario_email', filters.email)
 
       const res = await fetch(`/api/reservations?${params.toString()}`)
 
       if (!res.ok) throw new Error('Error al cargar reservaciones')
 
       const data = await res.json()
-      setReservations(
-        data.data?.map((r: any) => ({
-          id: r.id,
-          usuario_nombre: r.usuario?.nombre || 'Unknown',
-          usuario_email: r.usuario?.email || 'unknown@example.com',
-          campus_nombre: r.cancha?.campus?.nombre || 'Unknown',
-          cancha_nombre: r.cancha?.nombre || 'Unknown',
-          fecha: r.fecha,
-          hora_inicio: r.hora_inicio,
-          precio: r.precio,
-          estado: r.estado || 'pendiente',
-        })) || []
-      )
+      console.log('API Response:', data)
+      console.log('Raw data array:', data.data)
+      
+      const mapped = data.data?.map((r: any) => ({
+        id: r.id,
+        usuario_nombre: r.usuario?.nombre || 'Unknown',
+        usuario_email: r.usuario?.email || 'unknown@example.com',
+        campus_nombre: r.cancha?.campus?.nombre || 'Unknown',
+        cancha_nombre: r.cancha?.nombre || 'Unknown',
+        fecha: r.fecha_empieza,
+        hora_inicio: r.fecha_empieza,
+        precio: r.precio_total,
+        estado: r.estado || 'pendiente',
+      })) || []
+      
+      console.log('Mapped reservations:', mapped)
+      setReservations(mapped)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido')
       console.error('Error:', err)
@@ -59,6 +63,7 @@ export default function ReservacionesPage() {
     }
   }
 
+  
   useEffect(() => {
     fetchReservations()
   }, [filters])

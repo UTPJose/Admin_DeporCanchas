@@ -15,6 +15,7 @@ export async function GET(request: NextRequest) {
     const campusId = searchParams.get('campus_id')
     const fechaInicio = searchParams.get('fecha_inicio')
     const fechaFin = searchParams.get('fecha_fin')
+    const usuarioEmail = searchParams.get('usuario_email')
 
     const reservations = await reservationsService.getReservations({
       page,
@@ -23,6 +24,7 @@ export async function GET(request: NextRequest) {
       campus_id: campusId ? parseInt(campusId, 10) : undefined,
       fecha_inicio: fechaInicio || undefined,
       fecha_fin: fechaFin || undefined,
+      usuario_email: usuarioEmail || undefined,
     })
 
     return NextResponse.json({

@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error(
@@ -9,8 +10,15 @@ if (!supabaseUrl || !supabaseAnonKey) {
   )
 }
 
+if (!supabaseServiceRoleKey && typeof window === 'undefined') {
+  console.warn('SUPABASE_SERVICE_ROLE_KEY not set. Server-side queries may be restricted by RLS.')
+}
+
 // Create Supabase client - Generic typing for now, specific types will be generated from schema
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+
+// Server-side client with service role key (for bypassing RLS)
+export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey || supabaseAnonKey)
 
 // Helper functions for common queries
 export async function fetchCampus() {

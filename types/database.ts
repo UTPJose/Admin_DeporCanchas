@@ -80,7 +80,7 @@ export interface UsuarioConRol extends Omit<Usuario, 'clave_hash'> {
 // Se mantienen los legacy ('reservado'|'finalizado'|'cancelado') en el tipo
 // para que la UI existente compile; los services siempre escriben los reales.
 export type ReservaEstado =
-  | 'pendiente' | 'pagada' | 'cancelada' | 'expirada'  // reales
+  | 'pendiente' | 'pagada' | 'cancelada' | 'expirada' | 'bloqueada'  // reales
   | 'reservado' | 'finalizado' | 'cancelado'           // legacy UI
 
 export interface Reserva {

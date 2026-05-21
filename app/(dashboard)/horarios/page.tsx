@@ -7,7 +7,7 @@ import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { ControlBar } from '@/components/horarios/ControlBar'
 import { WeeklyCalendar } from '@/components/horarios/WeeklyCalendar'
 import { BlockModal } from '@/components/horarios/BlockModal'
-import { useState as useStateCallback } from 'react'
+import { ConfirmModal } from '@/components/common/ConfirmModal'
 
 interface Court {
   id: number
@@ -26,7 +26,7 @@ interface ScheduleBlock {
   start_date: string
   end_date: string
   reason?: string
-  state: 'bloqueado' | 'reservado' | 'disponible'
+  state: 'bloqueada' | 'reservado' | 'disponible'
 }
 
 export default function HorariosPage() {
@@ -41,6 +41,8 @@ export default function HorariosPage() {
   const [error, setError] = useState<string | null>(null)
   const [showBlockModal, setShowBlockModal] = useState(false)
   const [selectedSlot, setSelectedSlot] = useState<{ date: string; startTime: string; endTime: string } | null>(null)
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [pendingUnblockId, setPendingUnblockId] = useState<number | null>(null)
 
   useEffect(() => {
     fetchCampuses()
@@ -131,6 +133,32 @@ export default function HorariosPage() {
     fetchSchedules()
   }
 
+  const handleUnblock = (scheduleId: number) => {
+    setPendingUnblockId(scheduleId)
+    setConfirmOpen(true)
+  }
+
+  const executeUnblock = async () => {
+    if (!pendingUnblockId) return
+    setConfirmOpen(false)
+
+    try {
+      const response = await fetch(`/api/schedules?id=${pendingUnblockId}`, {
+        method: 'DELETE',
+      })
+      const result = await response.json()
+      if (result.success) {
+        fetchSchedules()
+      } else {
+        setError(result.error || 'Error al liberar el horario')
+      }
+    } catch (err) {
+      setError('Error al conectar con el servidor')
+    } finally {
+      setPendingUnblockId(null)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -163,6 +191,7 @@ export default function HorariosPage() {
               weekStart={weekStart}
               schedules={schedules}
               onCellClick={handleCellClick}
+              onUnblock={handleUnblock}
             />
           )}
         </div>
@@ -178,6 +207,20 @@ export default function HorariosPage() {
           onSave={handleBlockSaved}
         />
       )}
+
+      <ConfirmModal
+        isOpen={confirmOpen}
+        title="Liberar Horario Bloqueado"
+        message="¿Está seguro de que desea liberar este horario bloqueado? Esto eliminará el bloqueo y volverá a hacer disponible la cancha en este bloque."
+        confirmText="Sí, liberar"
+        cancelText="Cancelar"
+        type="warning"
+        onConfirm={executeUnblock}
+        onCancel={() => {
+          setConfirmOpen(false)
+          setPendingUnblockId(null)
+        }}
+      />
     </div>
   )
 }

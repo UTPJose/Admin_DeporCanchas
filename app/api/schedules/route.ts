@@ -83,7 +83,8 @@ export async function POST(request: NextRequest) {
         body.court_id,
         body.start_date,
         body.end_date,
-        body.reason
+        body.reason,
+        body.all_day
       )
 
       return NextResponse.json(
@@ -132,6 +133,36 @@ export async function POST(request: NextRequest) {
       {
         success: false,
         error: error instanceof Error ? error.message : 'Error al crear horario',
+      },
+      { status: 500 }
+    )
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const id = searchParams.get('id')
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, error: 'id requerido para desbloquear' },
+        { status: 400 }
+      )
+    }
+
+    await schedulesService.unblockSchedule(parseInt(id, 10))
+
+    return NextResponse.json({
+      success: true,
+      message: 'Horario desbloqueado correctamente',
+    })
+  } catch (error) {
+    console.error('Error deleting schedule:', error)
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Error al desbloquear horario',
       },
       { status: 500 }
     )

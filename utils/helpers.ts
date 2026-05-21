@@ -41,6 +41,7 @@ export function getStatusColor(status: string): string {
     mantenimiento: '#f59e0b',
     disponible: '#22c55e',
     bloqueado: '#ef4444',
+    bloqueada: '#ef4444',
     pendiente: '#f59e0b',
     pagada: '#22c55e',
     cancelada: '#ef4444',
@@ -65,6 +66,7 @@ export function getStatusBadgeClass(status: string): string {
     mantenimiento: 'bg-amber-100 text-amber-800',
     disponible: 'bg-green-100 text-green-800',
     bloqueado: 'bg-red-100 text-red-800',
+    bloqueada: 'bg-red-100 text-red-800',
     pendiente: 'bg-amber-100 text-amber-800',
     pagada: 'bg-green-100 text-green-800',
     cancelada: 'bg-red-100 text-red-800',
@@ -171,4 +173,27 @@ export function sortByKey<T extends Record<string, unknown>>(
     const comparison = aVal < bVal ? -1 : 1
     return order === 'asc' ? comparison : -comparison
   })
+}
+
+export function sanitizeDatetime(dtStr: string): string {
+  if (!dtStr) return dtStr
+  const parts = dtStr.split('T')
+  if (parts.length !== 2) return dtStr
+
+  const datePart = parts[0]
+  let timePart = parts[1]
+
+  let tzPart = ''
+  const tzMatch = timePart.match(/(Z|[+-]\d{2}:\d{2})$/)
+  if (tzMatch) {
+    tzPart = tzMatch[0]
+    timePart = timePart.slice(0, -tzPart.length)
+  }
+
+  const timeSubparts = timePart.split(':')
+  if (timeSubparts.length > 3) {
+    timePart = timeSubparts.slice(0, 3).join(':')
+  }
+
+  return `${datePart}T${timePart}${tzPart}`
 }

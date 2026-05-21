@@ -26,6 +26,7 @@ export const ESTADOS_RESERVA = {
   PAGADA: 'pagada',
   CANCELADA: 'cancelada',
   EXPIRADA: 'expirada',
+  BLOQUEADA: 'bloqueada',
   // Aliases legacy
   RESERVADO: 'pagada',
   FINALIZADO: 'pagada',

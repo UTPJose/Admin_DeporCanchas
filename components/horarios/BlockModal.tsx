@@ -36,9 +36,15 @@ export function BlockModal({
     setLoading(true)
 
     try {
-      // Calculate full date-time strings
-      const startDatetime = `${date}T${allDay ? '00:00:00' : startTime}:00`
-      const endDatetime = `${date}T${allDay ? '23:59:59' : endTime}:00`
+      // Calculate full date-time strings safely
+      const getSafeTime = (time: string, isAllDay: boolean, defaultTime: string) => {
+        if (isAllDay) return defaultTime
+        if (!time) return defaultTime
+        return time.split(':').length === 2 ? `${time}:00` : time
+      }
+
+      const startDatetime = `${date}T${getSafeTime(startTime, allDay, '00:00:00')}`
+      const endDatetime = `${date}T${getSafeTime(endTime, allDay, '23:59:59')}`
 
       const response = await fetch('/api/schedules', {
         method: 'POST',
@@ -46,9 +52,10 @@ export function BlockModal({
         body: JSON.stringify({
           action: 'block',
           court_id: courtId,
-          start_date: startDatetime,
-          end_date: endDatetime,
+          start_date: `${startDatetime}Z`,
+          end_date: `${endDatetime}Z`,
           reason: reason || 'Bloqueo manual',
+          all_day: allDay,
         }),
       })
 
@@ -100,12 +107,19 @@ export function BlockModal({
               id="all_day"
               checked={allDay}
               onChange={(e) => setAllDay(e.target.checked)}
-              className="rounded border-gray-300"
+              className="rounded border-gray-300 text-green-600 focus:ring-green-500"
             />
-            <label htmlFor="all_day" className="text-sm font-medium text-gray-700">
+            <label htmlFor="all_day" className="text-sm font-medium text-gray-700 select-none cursor-pointer">
               Todo el día
             </label>
           </div>
+
+          {allDay && (
+            <div className="p-3 bg-amber-50 border border-amber-200 text-amber-900 rounded-lg text-[11px] leading-relaxed flex items-start gap-2 animate-fadeIn">
+              <span className="font-bold text-amber-700 uppercase tracking-wide shrink-0 bg-amber-200/60 px-1.5 py-0.5 rounded-sm text-[8px] mt-0.5">INFO</span>
+              <span>Nota: Al bloquear todo el día, se detectarán y respetarán las reservas existentes, bloqueando únicamente las horas disponibles del día.</span>
+            </div>
+          )}
 
           {!allDay && (
             <div className="grid grid-cols-2 gap-4">

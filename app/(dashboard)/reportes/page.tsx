@@ -18,9 +18,14 @@ interface ReportData {
 }
 
 export default function ReportesPage() {
-  const [period, setPeriod] = useState<'day' | 'week' | 'month'>('month')
-  const [startDate, setStartDate] = useState(getDefaultStartDate())
-  const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0])
+  const [period, setPeriod] = useState<'day' | 'week' | 'month' | 'custom'>('month')
+  const [startDate, setStartDate] = useState(() => {
+    const today = new Date()
+    return `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}-01`
+  })
+  const [endDate, setEndDate] = useState(() => {
+    return new Date().toISOString().split('T')[0]
+  })
   const [reportData, setReportData] = useState<ReportData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -28,6 +33,30 @@ export default function ReportesPage() {
   useEffect(() => {
     fetchReportData()
   }, [period, startDate, endDate])
+
+  const handlePeriodChange = (newPeriod: 'day' | 'week' | 'month' | 'custom') => {
+    setPeriod(newPeriod)
+    
+    const today = new Date()
+    const todayStr = today.toISOString().split('T')[0]
+
+    if (newPeriod === 'day') {
+      setStartDate(todayStr)
+      setEndDate(todayStr)
+    } else if (newPeriod === 'week') {
+      const dayOfWeek = today.getDay()
+      const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
+      const monday = new Date(today)
+      monday.setDate(today.getDate() + diffToMonday)
+      
+      setStartDate(monday.toISOString().split('T')[0])
+      setEndDate(todayStr)
+    } else if (newPeriod === 'month') {
+      const startOfMonth = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}-01`
+      setStartDate(startOfMonth)
+      setEndDate(todayStr)
+    }
+  }
 
   const fetchReportData = async () => {
     setLoading(true)
@@ -75,7 +104,7 @@ export default function ReportesPage() {
           period={period}
           startDate={startDate}
           endDate={endDate}
-          onPeriodChange={setPeriod}
+          onPeriodChange={handlePeriodChange}
           onStartDateChange={setStartDate}
           onEndDateChange={setEndDate}
         />
@@ -94,13 +123,13 @@ export default function ReportesPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <RevenueCard
               label="Ingresos Totales"
-              value={`$${reportData.totalRevenue.toFixed(2)}`}
+              value={`S/ ${reportData.totalRevenue.toFixed(2)}`}
               icon="DollarSign"
               trend={reportData.variationPercentage}
             />
             <RevenueCard
               label="Promedio por Reserva"
-              value={`$${reportData.averageReservation.toFixed(2)}`}
+              value={`S/ ${reportData.averageReservation.toFixed(2)}`}
               icon="TrendingUp"
             />
             <RevenueCard
@@ -133,8 +162,14 @@ export default function ReportesPage() {
   )
 }
 
-function getDefaultStartDate(): string {
-  const date = new Date()
-  date.setDate(date.getDate() - 30)
-  return date.toISOString().split('T')[0]
+function formatDate(dateStr: string): string {
+  try {
+    const parts = dateStr.split('-')
+    if (parts.length === 3) {
+      return `${parts[2]}/${parts[1]}/${parts[0]}`
+    }
+    return dateStr
+  } catch (e) {
+    return dateStr
+  }
 }

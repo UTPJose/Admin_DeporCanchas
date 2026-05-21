@@ -13,6 +13,13 @@ interface SportDistributionProps {
 const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444']
 
 export function SportDistribution({ data, loading }: SportDistributionProps) {
+  const total = data.reduce((sum, item) => sum + item.value, 0)
+
+  const getPercentage = (value: number) => {
+    if (total === 0) return '0%'
+    return `${((value / total) * 100).toFixed(0)}%`
+  }
+
   if (loading) {
     return (
       <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100 h-80 flex items-center justify-center">
@@ -31,7 +38,7 @@ export function SportDistribution({ data, loading }: SportDistributionProps) {
             cx="50%"
             cy="50%"
             labelLine={false}
-            label={({ name, value }) => `${name}: ${value}%`}
+            label={({ name, value }) => `${name}: ${getPercentage(value)} (${value})`}
             outerRadius={80}
             fill="#8884d8"
             dataKey="value"
@@ -40,7 +47,7 @@ export function SportDistribution({ data, loading }: SportDistributionProps) {
               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
             ))}
           </Pie>
-          <Tooltip formatter={(value) => `${value}%`} />
+          <Tooltip formatter={(value: any) => `${value} reservas (${getPercentage(Number(value))})`} />
           <Legend />
         </PieChart>
       </ResponsiveContainer>

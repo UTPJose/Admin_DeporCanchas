@@ -83,7 +83,8 @@ export const schedulesService = {
       .from('reservas')
       .select('id, canchasdep_id, fecha_empieza, fecha_termina, estado, code, usuarios(email)')
       .eq('canchasdep_id', courtId)
-      .in('estado', ['pendiente', 'pagada', 'bloqueada'])
+      .neq('estado', 'cancelada')
+      .neq('estado', 'cancelado')
       .gte('fecha_empieza', `${weekStart}T00:00:00Z`)
       .lte('fecha_termina', `${weekEnd}T23:59:59Z`)
 
@@ -103,6 +104,7 @@ export const schedulesService = {
             ? 'Reservado' 
             : 'Reserva Pendiente',
         state: isManualBlock ? 'bloqueada' : 'reservado',
+        real_state: reserva.estado,
         code: reserva.code || null,
         user_email: (reserva.usuarios as any)?.email || ''
       }

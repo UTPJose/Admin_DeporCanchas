@@ -19,7 +19,7 @@ export function RevenueChart({ data }: RevenueChartProps) {
         <XAxis dataKey="date" stroke="#6b7280" style={{ fontSize: '12px' }} />
         <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
         <Tooltip
-          formatter={(value: any) => `$${value.toFixed(2)}`}
+          formatter={(value: any) => `S/ ${value.toFixed(2)}`}
           contentStyle={{
             backgroundColor: '#fff',
             border: '1px solid #e5e7eb',

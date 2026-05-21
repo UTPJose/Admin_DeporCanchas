@@ -19,17 +19,38 @@ export async function GET(request: NextRequest) {
 
     switch (type) {
       case 'dashboard':
-        response = await reportsService.getDashboardStats()
+        const days = parseInt(searchParams.get('days') || '7', 10)
+        response = await reportsService.getDashboardStats(days)
         break
 
       case 'revenue':
-        if (!startDate || !endDate) {
-          return NextResponse.json(
-            { success: false, error: 'startDate y endDate requeridos' },
-            { status: 400 }
-          )
+        const period = searchParams.get('period') || 'week'
+        let start = startDate
+        let end = endDate
+        if (!start || !end) {
+          const now = new Date()
+          const endObj = now
+          const startObj = new Date()
+          if (period === 'week') {
+            startObj.setDate(now.getDate() - 7)
+          } else if (period === 'month') {
+            startObj.setDate(now.getDate() - 30)
+          } else if (period === 'year') {
+            startObj.setDate(now.getDate() - 365)
+          } else {
+            startObj.setDate(now.getDate() - 7)
+          }
+
+          const formatDate = (d: Date) => {
+            const year = d.getFullYear()
+            const month = String(d.getMonth() + 1).padStart(2, '0')
+            const day = String(d.getDate()).padStart(2, '0')
+            return `${year}-${month}-${day}`
+          }
+          start = formatDate(startObj)
+          end = formatDate(endObj)
         }
-        response = await reportsService.getRevenueByPeriod(startDate, endDate)
+        response = await reportsService.getRevenueReportData(start, end, period)
         break
 
       case 'by-deport':

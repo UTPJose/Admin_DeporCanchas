@@ -20,6 +20,8 @@ export const reservationsService = {
 
     if (filters?.estado) {
       query = query.eq('estado', filters.estado)
+    } else {
+      query = query.neq('estado', 'bloqueada')
     }
 
     const { data: reservas, error } = await query

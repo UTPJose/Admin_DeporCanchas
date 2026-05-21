@@ -207,6 +207,9 @@ export interface DashboardStats {
   total_reservas: number
   total_ingresos: number
   total_pendientes: number
+  usuarios_trend?: number
+  reservas_trend?: number
+  ingresos_trend?: number
   reservas_por_dia?: { dia: string; cantidad: number }[]
   ingresos_por_periodo?: { periodo: string; monto: number }[]
 }

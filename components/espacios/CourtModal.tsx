@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 interface CourtModalProps {
   isOpen: boolean
@@ -38,6 +38,27 @@ export function CourtModal({
   )
   const [error, setError] = useState<string | null>(null)
 
+  useEffect(() => {
+    if (initialData) {
+      setFormData({
+        campus_id: initialData.campus_id,
+        nombre: initialData.nombre,
+        tipo_deporte: initialData.tipo_deporte,
+        cantidad_jugadores: initialData.cantidad_jugadores,
+        estado: initialData.estado,
+      })
+    } else {
+      setFormData({
+        campus_id: campuses[0]?.id || 0,
+        nombre: '',
+        tipo_deporte: 'Futbol',
+        cantidad_jugadores: 10,
+        estado: 'active',
+      })
+    }
+    setError(null)
+  }, [initialData, campuses, isOpen])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
@@ -49,14 +70,6 @@ export function CourtModal({
 
     try {
       await onSubmit(formData)
-      setFormData({
-        campus_id: campuses[0]?.id || 0,
-        nombre: '',
-        tipo_deporte: 'Futbol',
-        cantidad_jugadores: 10,
-        estado: 'active',
-      })
-      onClose()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al guardar')
     }

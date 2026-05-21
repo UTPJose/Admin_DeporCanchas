@@ -30,6 +30,8 @@ export default function EspaciosPage() {
 
   const [courtModalOpen, setCourtModalOpen] = useState(false)
   const [campusModalOpen, setCampusModalOpen] = useState(false)
+  const [courtModalLoading, setCourtModalLoading] = useState(false)
+  const [campusModalLoading, setCampusModalLoading] = useState(false)
   const [selectedCourt, setSelectedCourt] = useState<Court | null>(null)
   const [selectedCampus, setSelectedCampus] = useState<Campus | null>(null)
 
@@ -84,6 +86,7 @@ export default function EspaciosPage() {
 
   const handleSubmitCourt = async (data: CourtFormData) => {
     try {
+      setCourtModalLoading(true)
       const method = selectedCourt ? 'PUT' : 'POST'
       const url = selectedCourt ? `/api/courts/${selectedCourt.id}` : '/api/courts'
 
@@ -94,9 +97,12 @@ export default function EspaciosPage() {
       })
 
       if (!res.ok) throw new Error('Error al guardar')
+      setCourtModalOpen(false)
       fetchData()
     } catch (err) {
       throw err
+    } finally {
+      setCourtModalLoading(false)
     }
   }
 
@@ -124,6 +130,7 @@ export default function EspaciosPage() {
 
   const handleSubmitCampus = async (data: CampusFormData) => {
     try {
+      setCampusModalLoading(true)
       const method = selectedCampus ? 'PUT' : 'POST'
       const url = selectedCampus ? `/api/campus/${selectedCampus.id}` : '/api/campus'
 
@@ -134,9 +141,12 @@ export default function EspaciosPage() {
       })
 
       if (!res.ok) throw new Error('Error al guardar')
+      setCampusModalOpen(false)
       fetchData()
     } catch (err) {
       throw err
+    } finally {
+      setCampusModalLoading(false)
     }
   }
 
@@ -240,6 +250,7 @@ export default function EspaciosPage() {
         onClose={() => setCourtModalOpen(false)}
         onSubmit={handleSubmitCourt}
         campuses={campuses}
+        loading={courtModalLoading}
         initialData={
           selectedCourt
             ? {
@@ -258,6 +269,7 @@ export default function EspaciosPage() {
         isOpen={campusModalOpen}
         onClose={() => setCampusModalOpen(false)}
         onSubmit={handleSubmitCampus}
+        loading={campusModalLoading}
         initialData={
           selectedCampus
             ? {

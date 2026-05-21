@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 interface CampusModalProps {
   isOpen: boolean
@@ -24,6 +24,21 @@ export function CampusModal({ isOpen, onClose, onSubmit, initialData, loading }:
   )
   const [error, setError] = useState<string | null>(null)
 
+  useEffect(() => {
+    if (initialData) {
+      setFormData({
+        nombre: initialData.nombre,
+        ubicacion: initialData.ubicacion,
+      })
+    } else {
+      setFormData({
+        nombre: '',
+        ubicacion: '',
+      })
+    }
+    setError(null)
+  }, [initialData, isOpen])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
@@ -40,11 +55,6 @@ export function CampusModal({ isOpen, onClose, onSubmit, initialData, loading }:
 
     try {
       await onSubmit(formData)
-      setFormData({
-        nombre: '',
-        ubicacion: '',
-      })
-      onClose()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al guardar')
     }

@@ -26,9 +26,10 @@ const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', '
 export function PricingRuleCard({ rule, onEdit, onDelete }: PricingRuleCardProps) {
   const dayName = rule.day_of_week !== undefined ? DAYS[rule.day_of_week] : 'Todos los días'
   const timeRange = rule.start_time && rule.end_time ? `${rule.start_time} - ${rule.end_time}` : 'Todo el día'
+  const basePrice = rule.base_price ?? 0
   const finalPrice = rule.discount_percentage
-    ? rule.base_price * (1 - rule.discount_percentage / 100)
-    : rule.base_price
+    ? basePrice * (1 - rule.discount_percentage / 100)
+    : basePrice
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
@@ -44,7 +45,7 @@ export function PricingRuleCard({ rule, onEdit, onDelete }: PricingRuleCardProps
           <div className="grid grid-cols-2 gap-2 text-sm">
             <div>
               <span className="text-gray-600">Precio base:</span>
-              <span className="ml-2 font-semibold text-gray-900">${rule.base_price.toFixed(2)}</span>
+              <span className="ml-2 font-semibold text-gray-900">${basePrice.toFixed(2)}</span>
             </div>
             {rule.discount_percentage && (
               <>

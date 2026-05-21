@@ -10,9 +10,18 @@ export async function GET(request: NextRequest) {
   try {
     const tarifas = await pricingService.getTarifas()
 
+    const mappedTarifas = tarifas.map((t: any) => ({
+      id: t.id,
+      base_price: t.precio ?? 0,
+      priority: t.prioridad ?? 0,
+      start_time: t.hora_empieza,
+      end_time: t.hora_termina,
+      active: true,
+    }))
+
     return NextResponse.json({
       success: true,
-      data: tarifas,
+      data: mappedTarifas,
     })
   } catch (error) {
     console.error('Error fetching pricing:', error)

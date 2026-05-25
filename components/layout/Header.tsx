@@ -70,7 +70,7 @@ export function Header() {
             </div>
             <div className="text-left hidden md:block">
               <p className="text-sm font-medium text-text-dark">{user.nombre}</p>
-              <p className="text-xs text-text-secondary">{user.rol}</p>
+              <p className="text-xs text-text-secondary">{user.rol_nombre}</p>
             </div>
             <ChevronDown className="w-4 h-4 text-text-secondary" />
           </button>

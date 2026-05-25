@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { schedulesService } from '@/services/schedules-service'
+import { requireAdmin, UnauthorizedError, unauthorizedResponse } from '@/lib/auth/requireAdmin'
 
 /**
  * GET /api/schedules - Obtener horarios
@@ -69,6 +70,15 @@ export async function POST(request: NextRequest) {
     const action = body.action || 'block'
 
     if (action === 'block') {
+      // El bloqueo se registra a nombre del admin logueado que lo crea.
+      let admin
+      try {
+        admin = await requireAdmin()
+      } catch (e) {
+        if (e instanceof UnauthorizedError) return unauthorizedResponse()
+        throw e
+      }
+
       if (!body.court_id || !body.start_date || !body.end_date) {
         return NextResponse.json(
           {
@@ -83,6 +93,7 @@ export async function POST(request: NextRequest) {
         body.court_id,
         body.start_date,
         body.end_date,
+        admin.id,
         body.reason,
         body.all_day
       )
@@ -133,6 +144,43 @@ export async function POST(request: NextRequest) {
       {
         success: false,
         error: error instanceof Error ? error.message : 'Error al crear horario',
+      },
+      { status: 500 }
+    )
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    // Cualquier admin puede editar un bloqueo.
+    try {
+      await requireAdmin()
+    } catch (e) {
+      if (e instanceof UnauthorizedError) return unauthorizedResponse()
+      throw e
+    }
+
+    const body = await request.json()
+    if (!body.id || !body.start_date || !body.end_date) {
+      return NextResponse.json(
+        { success: false, error: 'id, start_date y end_date requeridos' },
+        { status: 400 }
+      )
+    }
+
+    const updated = await schedulesService.updateBlock(
+      parseInt(String(body.id), 10),
+      body.start_date,
+      body.end_date,
+      body.reason
+    )
+
+    return NextResponse.json({ success: true, data: updated })
+  } catch (error) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Error al editar bloqueo',
       },
       { status: 500 }
     )

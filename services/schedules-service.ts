@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import { CanchaDisponibilidad } from '@/types/database'
 import { sanitizeDatetime } from '@/utils/helpers'
+import { limaToUtcISO, limaYMD, addDaysYMD } from '@/lib/lima-time'
 
 /**
  * Schedules Service - CRUD operations para Horarios y Bloqueos
@@ -78,17 +79,21 @@ export const schedulesService = {
    * Obtener horarios bloqueados de una cancha en una semana
    */
   async getBlockedSchedules(courtId: number, weekStart: string, weekEnd: string): Promise<any[]> {
-    // Los horarios bloqueados se almacenan como reservas con estado especial
+    // Los horarios bloqueados se almacenan como reservas con estado especial.
+    // weekStart/weekEnd son YMD en hora Lima; los convertimos a instantes UTC.
+    // Ventana [00:00 del lunes Lima, 00:00 del día siguiente al domingo Lima).
+    const startUtc = limaToUtcISO(weekStart, '00:00:00')
+    const endUtc = limaToUtcISO(addDaysYMD(weekEnd, 1), '00:00:00')
     const { data, error } = await supabaseAdmin
       .from('reservas')
-      .select('id, canchasdep_id, fecha_empieza, fecha_termina, estado, code, usuarios(email)')
+      .select('id, canchasdep_id, fecha_empieza, fecha_termina, estado, code, motivo, usuarios(email)')
       .eq('canchasdep_id', courtId)
       .in('estado', ['pendiente', 'pagada', 'bloqueada'])
-      .gte('fecha_empieza', `${weekStart}T00:00:00Z`)
-      .lte('fecha_termina', `${weekEnd}T23:59:59Z`)
+      .gte('fecha_empieza', startUtc)
+      .lt('fecha_empieza', endUtc)
 
     if (error) throw new Error(`Error al obtener horarios bloqueados: ${error.message}`)
-    
+
     // Mapear los campos de la BD a los nombres de propiedad que espera el calendario de la UI
     return (data || []).map(reserva => {
       const isManualBlock = reserva.estado === 'bloqueada'
@@ -97,10 +102,10 @@ export const schedulesService = {
         court_id: reserva.canchasdep_id,
         start_date: reserva.fecha_empieza,
         end_date: reserva.fecha_termina,
-        reason: isManualBlock 
-          ? 'Bloqueo Manual' 
-          : reserva.estado === 'pagada' 
-            ? 'Reservado' 
+        reason: isManualBlock
+          ? (reserva as any).motivo || 'Bloqueo Manual'
+          : reserva.estado === 'pagada'
+            ? 'Reservado'
             : 'Reserva Pendiente',
         state: isManualBlock ? 'bloqueada' : 'reservado',
         code: reserva.code || null,
@@ -116,6 +121,7 @@ export const schedulesService = {
     courtId: number,
     startDate: string,
     endDate: string,
+    adminId: number,
     reason?: string,
     allDay?: boolean
   ): Promise<any> {
@@ -127,42 +133,39 @@ export const schedulesService = {
       }
     }
 
-    // Obtener un usuario de la base de datos para no violar la FK (usuarios_id es NOT NULL)
-    const { data: userData, error: userError } = await supabaseAdmin
-      .from('usuarios')
-      .select('id')
-      .limit(1)
-      .single()
-
-    if (userError || !userData) {
-      throw new Error('No se encontró ningún usuario para asociar al bloqueo.')
-    }
+    // El bloqueo queda registrado a nombre del admin logueado que lo crea
+    // (FK usuarios_id NOT NULL). Acción del rol admin; el cliente solo lo ve como
+    // slot 'bloqueada'. Cualquier admin puede crear o liberar bloqueos.
 
     if (allDay) {
-      const date = startDate.split('T')[0]
+      // Día (YMD) en hora Lima a partir del instante de inicio recibido
+      const date = limaYMD(startDate)
+      // Ventana del día completo (Lima) en instantes UTC
+      const dayStartUtc = limaToUtcISO(date, '00:00:00')
+      const dayEndUtc = limaToUtcISO(date, '23:59:59')
+
       const { data: existing, error: fetchError } = await supabaseAdmin
         .from('reservas')
         .select('fecha_empieza, fecha_termina')
         .eq('canchasdep_id', courtId)
         .in('estado', ['pendiente', 'pagada', 'bloqueada'])
-        .gte('fecha_empieza', `${date}T00:00:00Z`)
-        .lte('fecha_termina', `${date}T23:59:59Z`)
+        .gte('fecha_empieza', dayStartUtc)
+        .lte('fecha_termina', dayEndUtc)
 
       if (fetchError) throw new Error(`Error al obtener reservas del día: ${fetchError.message}`)
 
-      // Definimos el rango operativo de la cancha: 6 AM a 11 PM
+      // Rango operativo de la cancha: 6 AM a 11 PM (hora Lima)
       const opStart = 6
       const opEnd = 23
-      
+
+      const hourIso = (h: number) => limaToUtcISO(date, `${h.toString().padStart(2, '0')}:00:00`)
+
       const freeRanges: { start: string; end: string }[] = []
       let currentStart: number | null = null
 
       for (let h = opStart; h < opEnd; h++) {
-        const hStartStr = `${date}T${h.toString().padStart(2, '0')}:00:00Z`
-        const hEndStr = `${date}T${(h + 1).toString().padStart(2, '0')}:00:00Z`
-        
-        const slotStart = new Date(hStartStr)
-        const slotEnd = new Date(hEndStr)
+        const slotStart = new Date(hourIso(h))
+        const slotEnd = new Date(hourIso(h + 1))
 
         const isReserved = (existing || []).some(res => {
           const resStart = new Date(res.fecha_empieza)
@@ -171,25 +174,15 @@ export const schedulesService = {
         })
 
         if (!isReserved) {
-          if (currentStart === null) {
-            currentStart = h
-          }
-        } else {
-          if (currentStart !== null) {
-            freeRanges.push({
-              start: `${date}T${currentStart.toString().padStart(2, '0')}:00:00Z`,
-              end: `${date}T${h.toString().padStart(2, '0')}:00:00Z`
-            })
-            currentStart = null
-          }
+          if (currentStart === null) currentStart = h
+        } else if (currentStart !== null) {
+          freeRanges.push({ start: hourIso(currentStart), end: hourIso(h) })
+          currentStart = null
         }
       }
 
       if (currentStart !== null) {
-        freeRanges.push({
-          start: `${date}T${currentStart.toString().padStart(2, '0')}:00:00Z`,
-          end: `${date}T${opEnd.toString().padStart(2, '0')}:00:00Z`
-        })
+        freeRanges.push({ start: hourIso(currentStart), end: hourIso(opEnd) })
       }
 
       if (freeRanges.length === 0) {
@@ -200,12 +193,13 @@ export const schedulesService = {
         const blockCode = 'BK' + Math.random().toString(36).substring(2, 8).toUpperCase()
         return {
           canchasdep_id: courtId,
-          usuarios_id: userData.id,
+          usuarios_id: adminId,
           fecha_empieza: range.start,
           fecha_termina: range.end,
           estado: 'bloqueada',
           precio_total: 0,
           code: blockCode,
+          motivo: reason ?? null,
         }
       })
 
@@ -231,18 +225,71 @@ export const schedulesService = {
       .insert([
         {
           canchasdep_id: courtId,
-          usuarios_id: userData.id,
+          usuarios_id: adminId,
           fecha_empieza: cleanStart,
           fecha_termina: cleanEnd,
           estado: 'bloqueada', // 'bloqueada' ya que ahora está soportado en la BD
           precio_total: 0,
           code: blockCode,
+          motivo: reason ?? null,
         },
       ])
       .select()
       .single()
 
     if (error) throw new Error(`Error al bloquear horario: ${error.message}`)
+    return data
+  },
+
+  /**
+   * Editar un bloqueo manual existente (fecha/hora/motivo).
+   * Solo aplica a reservas con estado 'bloqueada'. Valida solapes contra otras
+   * reservas/bloqueos (excluyéndose a sí mismo); el constraint EXCLUDE de la BD
+   * es la última línea de defensa.
+   */
+  async updateBlock(
+    scheduleId: number,
+    startDate: string,
+    endDate: string,
+    motivo?: string
+  ): Promise<any> {
+    const cleanStart = sanitizeDatetime(startDate)
+    const cleanEnd = sanitizeDatetime(endDate)
+
+    // Verificar que sea un bloqueo y obtener su cancha
+    const { data: actual, error: getErr } = await supabaseAdmin
+      .from('reservas')
+      .select('id, canchasdep_id, estado')
+      .eq('id', scheduleId)
+      .single()
+    if (getErr || !actual) throw new Error('Bloqueo no encontrado.')
+    if (actual.estado !== 'bloqueada') throw new Error('Solo se pueden editar bloqueos manuales.')
+
+    // Solape con otras filas (excluyéndose a sí mismo)
+    const { count, error: countErr } = await supabaseAdmin
+      .from('reservas')
+      .select('*', { count: 'exact', head: true })
+      .eq('canchasdep_id', actual.canchasdep_id)
+      .neq('id', scheduleId)
+      .in('estado', ['pendiente', 'pagada', 'bloqueada'])
+      .lt('fecha_empieza', cleanEnd)
+      .gt('fecha_termina', cleanStart)
+    if (countErr) throw new Error(`Error al validar disponibilidad: ${countErr.message}`)
+    if ((count || 0) > 0) {
+      throw new Error('El nuevo horario se cruza con otra reserva o bloqueo.')
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from('reservas')
+      .update({
+        fecha_empieza: cleanStart,
+        fecha_termina: cleanEnd,
+        motivo: motivo ?? null,
+      })
+      .eq('id', scheduleId)
+      .select()
+      .single()
+    if (error) throw new Error(`Error al editar bloqueo: ${error.message}`)
     return data
   },
 

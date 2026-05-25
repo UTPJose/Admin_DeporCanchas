@@ -1,12 +1,18 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+
+export interface TipoOption {
+  valor: string
+  etiqueta: string
+}
 
 interface CourtModalProps {
   isOpen: boolean
   onClose: () => void
   onSubmit: (data: CourtFormData) => Promise<void>
   campuses: Array<{ id: number; nombre: string }>
+  tipos: TipoOption[]
   initialData?: CourtFormData & { id?: number }
   loading?: boolean
 }
@@ -16,7 +22,17 @@ export interface CourtFormData {
   nombre: string
   tipo_deporte: string
   cantidad_jugadores: number
-  estado: 'active' | 'maintenance' | 'inactive'
+  estado: 'activo' | 'mantenimiento' | 'inactivo'
+}
+
+function emptyForm(campuses: Array<{ id: number }>, tipos: TipoOption[]): CourtFormData {
+  return {
+    campus_id: campuses[0]?.id || 0,
+    nombre: '',
+    tipo_deporte: tipos[0]?.valor ?? '',
+    cantidad_jugadores: 10,
+    estado: 'activo',
+  }
 }
 
 export function CourtModal({
@@ -24,19 +40,20 @@ export function CourtModal({
   onClose,
   onSubmit,
   campuses,
+  tipos,
   initialData,
   loading,
 }: CourtModalProps) {
-  const [formData, setFormData] = useState<CourtFormData>(
-    initialData || {
-      campus_id: campuses[0]?.id || 0,
-      nombre: '',
-      tipo_deporte: 'Futbol',
-      cantidad_jugadores: 10,
-      estado: 'active',
-    }
-  )
+  const [formData, setFormData] = useState<CourtFormData>(initialData ?? emptyForm(campuses, tipos))
   const [error, setError] = useState<string | null>(null)
+
+  // Re-sincronizar el formulario cada vez que se abre o cambia la cancha a editar
+  useEffect(() => {
+    if (!isOpen) return
+    setError(null)
+    setFormData(initialData ?? emptyForm(campuses, tipos))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, initialData?.id])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -49,13 +66,7 @@ export function CourtModal({
 
     try {
       await onSubmit(formData)
-      setFormData({
-        campus_id: campuses[0]?.id || 0,
-        nombre: '',
-        tipo_deporte: 'Futbol',
-        cantidad_jugadores: 10,
-        estado: 'active',
-      })
+      setFormData(emptyForm(campuses, tipos))
       onClose()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al guardar')
@@ -99,16 +110,19 @@ export function CourtModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Deporte</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de cancha</label>
             <select
               value={formData.tipo_deporte}
               onChange={(e) => setFormData({ ...formData, tipo_deporte: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600"
             >
-              <option>Futbol</option>
-              <option>Voleibol</option>
-              <option>Basquetbol</option>
-              <option>Tenis</option>
+              {/* Si la cancha tiene un tipo que ya no está activo, lo mostramos igual */}
+              {formData.tipo_deporte && !tipos.some((t) => t.valor === formData.tipo_deporte) && (
+                <option value={formData.tipo_deporte}>{formData.tipo_deporte}</option>
+              )}
+              {tipos.map((t) => (
+                <option key={t.valor} value={t.valor}>{t.etiqueta}</option>
+              ))}
             </select>
           </div>
 
@@ -130,9 +144,9 @@ export function CourtModal({
               onChange={(e) => setFormData({ ...formData, estado: e.target.value as any })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600"
             >
-              <option value="active">Activa</option>
-              <option value="maintenance">Mantenimiento</option>
-              <option value="inactive">Inactiva</option>
+              <option value="activo">Activa</option>
+              <option value="mantenimiento">Mantenimiento</option>
+              <option value="inactivo">Inactiva</option>
             </select>
           </div>
 

@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase'
+import { supabaseAdmin as supabase } from '@/lib/supabase'
 import { Campus, CampusConDetalles, CanchaFilters } from '@/types/database'
 
 /**

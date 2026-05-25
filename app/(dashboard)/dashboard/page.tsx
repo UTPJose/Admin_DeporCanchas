@@ -69,10 +69,10 @@ export default function DashboardPage() {
         const eventsData = await eventsRes.json()
 
         setStats({
-          totalUsuarios: statsData.data?.totalUsuarios || 0,
-          totalReservas: statsData.data?.totalReservas || 0,
-          totalIngresos: statsData.data?.totalIngresos || 0,
-          pendientes: statsData.data?.pendientes || 0,
+          totalUsuarios: statsData.data?.total_usuarios || 0,
+          totalReservas: statsData.data?.total_reservas || 0,
+          totalIngresos: statsData.data?.total_ingresos || 0,
+          pendientes: statsData.data?.total_pendientes || 0,
         })
 
         setSports(sportsData.data || [])
@@ -80,8 +80,8 @@ export default function DashboardPage() {
         if (revenueData.data) {
           setRevenue(
             revenueData.data.map((item: any) => ({
-              date: item.date || item.fecha || '',
-              ingresos: item.ingresos || 0,
+              date: item.periodo || item.date || item.fecha || '',
+              ingresos: item.monto ?? item.ingresos ?? 0,
             }))
           )
         }
@@ -91,8 +91,8 @@ export default function DashboardPage() {
             eventsData.data.slice(0, 10).map((item: any) => ({
               id: item.id,
               title: item.titulo || item.title || 'Evento',
-              description: item.descripcion || item.description,
-              timestamp: item.timestamp || item.created_at || new Date().toISOString(),
+              description: item.mensaje || item.descripcion || item.description,
+              timestamp: item.creado_en || item.timestamp || item.created_at || new Date().toISOString(),
             }))
           )
         }

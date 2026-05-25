@@ -13,7 +13,7 @@ import toast from 'react-hot-toast'
 
 export default function LoginPage() {
   const router = useRouter()
-  const { login, isAuthenticated } = useAuth()
+  const { refresh, isAuthenticated } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -50,14 +50,8 @@ export default function LoginPage() {
       const data = await response.json()
 
       if (data.success) {
-        // Guardar usuario y tokens
-        login(data.data.user, {
-          token: data.data.tokens.token,
-          sessionToken: data.data.tokens.sessionToken,
-          refreshToken: data.data.tokens.refreshToken,
-          expiresIn: data.data.tokens.expiresIn,
-        })
-
+        // La cookie httpOnly ya fue seteada por el endpoint; refrescamos el contexto
+        await refresh()
         toast.success('¡Bienvenido!')
         router.push('/dashboard')
       }
@@ -121,14 +115,6 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <div className="mt-6 pt-6 border-t border-border-color">
-            <p className="text-center text-sm text-text-secondary">
-              ¿No tienes cuenta?{' '}
-              <a href="/register" className="text-primary hover:text-primary-dark font-medium">
-                Regístrate
-              </a>
-            </p>
-          </div>
         </Card>
 
         {/* Footer */}

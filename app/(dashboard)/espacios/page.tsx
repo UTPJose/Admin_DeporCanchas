@@ -5,6 +5,15 @@ import { CourtCard } from '@/components/espacios/CourtCard'
 import { CampusCard } from '@/components/espacios/CampusCard'
 import { CourtModal, CourtFormData } from '@/components/espacios/CourtModal'
 import { CampusModal, CampusFormData } from '@/components/espacios/CampusModal'
+import { CourtTypesManager } from '@/components/espacios/CourtTypesManager'
+import { tipoCanchaLabel } from '@/lib/constants'
+
+interface TipoCancha {
+  id: number
+  valor: string
+  etiqueta: string
+  activo: boolean
+}
 
 interface Court {
   id: number
@@ -12,7 +21,7 @@ interface Court {
   tipo_deporte: string
   campus_id: number
   cantidad_jugadores: number
-  estado: 'active' | 'maintenance' | 'inactive'
+  estado: 'activo' | 'mantenimiento' | 'inactivo'
 }
 
 interface Campus {
@@ -22,9 +31,10 @@ interface Campus {
 }
 
 export default function EspaciosPage() {
-  const [tab, setTab] = useState<'courts' | 'campus'>('courts')
+  const [tab, setTab] = useState<'courts' | 'campus' | 'tipos'>('courts')
   const [courts, setCourts] = useState<Court[]>([])
   const [campuses, setCampuses] = useState<Campus[]>([])
+  const [tipos, setTipos] = useState<TipoCancha[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -37,7 +47,11 @@ export default function EspaciosPage() {
     try {
       setLoading(true)
       setError(null)
-      const [courtsRes, campusesRes] = await Promise.all([fetch('/api/courts'), fetch('/api/campus')])
+      const [courtsRes, campusesRes, tiposRes] = await Promise.all([
+        fetch('/api/courts'),
+        fetch('/api/campus'),
+        fetch('/api/court-types'),
+      ])
 
       if (!courtsRes.ok || !campusesRes.ok) {
         throw new Error('Error al cargar datos')
@@ -45,9 +59,11 @@ export default function EspaciosPage() {
 
       const courtsData = await courtsRes.json()
       const campusesData = await campusesRes.json()
+      const tiposData = await tiposRes.json()
 
       setCourts(courtsData.data || [])
       setCampuses(campusesData.data || [])
+      setTipos(tiposData.data || [])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido')
       console.error('Error:', err)
@@ -59,6 +75,21 @@ export default function EspaciosPage() {
   useEffect(() => {
     fetchData()
   }, [])
+
+  // Tipos activos para el selector del formulario (+ resolución de etiqueta para las cards)
+  const tiposActivos = tipos.filter((t) => t.activo).map((t) => ({ valor: t.valor, etiqueta: t.etiqueta }))
+  const etiquetaTipo = (valor: string) =>
+    tipos.find((t) => t.valor === valor)?.etiqueta ?? tipoCanchaLabel(valor)
+
+  const refetchTipos = async () => {
+    try {
+      const r = await fetch('/api/court-types')
+      const j = await r.json()
+      if (j.success) setTipos(j.data)
+    } catch {
+      /* noop */
+    }
+  }
 
   const handleAddCourt = () => {
     setSelectedCourt(null)
@@ -170,6 +201,18 @@ export default function EspaciosPage() {
         >
           Por Campus
         </button>
+        <button
+          onClick={() => {
+            setTab('tipos')
+          }}
+          className={`px-4 py-2 font-medium border-b-2 transition-colors ${
+            tab === 'tipos'
+              ? 'border-green-600 text-green-600'
+              : 'border-transparent text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          Tipos de Cancha
+        </button>
       </div>
 
       {tab === 'courts' && (
@@ -191,7 +234,7 @@ export default function EspaciosPage() {
                 <CourtCard
                   key={court.id}
                   name={court.nombre}
-                  sport={court.tipo_deporte}
+                  sport={etiquetaTipo(court.tipo_deporte)}
                   campus={campuses.find((c) => c.id === court.campus_id)?.nombre || 'Unknown'}
                   capacity={court.cantidad_jugadores}
                   status={court.estado}
@@ -235,11 +278,21 @@ export default function EspaciosPage() {
         </div>
       )}
 
+      {tab === 'tipos' && (
+        <div className="space-y-4">
+          <p className="text-gray-600 text-sm">
+            Tipos de cancha disponibles. Los tipos activos aparecen al crear o editar una cancha.
+          </p>
+          <CourtTypesManager onChange={refetchTipos} />
+        </div>
+      )}
+
       <CourtModal
         isOpen={courtModalOpen}
         onClose={() => setCourtModalOpen(false)}
         onSubmit={handleSubmitCourt}
         campuses={campuses}
+        tipos={tiposActivos}
         initialData={
           selectedCourt
             ? {

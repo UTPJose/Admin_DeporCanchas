@@ -13,11 +13,10 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get('type') || 'all'
     const limit = parseInt(searchParams.get('limit') || '50', 10)
 
+    // Sin user_id → notificaciones recientes globales (dashboard admin)
     if (!userId) {
-      return NextResponse.json(
-        { success: false, error: 'user_id requerido' },
-        { status: 400 }
-      )
+      const recientes = await notificationsService.getRecentNotifications(limit)
+      return NextResponse.json({ success: true, type: 'recent', data: recientes })
     }
 
     const uid = parseInt(userId, 10)

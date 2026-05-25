@@ -1,6 +1,7 @@
 'use client'
 
 import { Lock, Calendar } from 'lucide-react'
+import { limaHour, limaMinutes } from '@/lib/lima-time'
 
 interface ScheduleBlock {
   id: number
@@ -21,14 +22,12 @@ interface ScheduleCellProps {
 
 function formatTimeRange(startStr: string, endStr: string): string {
   try {
-    const start = new Date(startStr)
-    const end = new Date(endStr)
-    
-    const startHours = start.getUTCHours().toString().padStart(2, '0')
-    const startMinutes = start.getUTCMinutes().toString().padStart(2, '0')
-    const endHours = end.getUTCHours().toString().padStart(2, '0')
-    const endMinutes = end.getUTCMinutes().toString().padStart(2, '0')
-    
+    // Hora de pared Lima, para que coincida con la fila del calendario
+    const startHours = limaHour(startStr).toString().padStart(2, '0')
+    const startMinutes = limaMinutes(startStr).toString().padStart(2, '0')
+    const endHours = limaHour(endStr).toString().padStart(2, '0')
+    const endMinutes = limaMinutes(endStr).toString().padStart(2, '0')
+
     return `(${startHours}:${startMinutes} - ${endHours}:${endMinutes})`
   } catch (e) {
     return ''
@@ -41,7 +40,11 @@ export function ScheduleCell({ schedule, onClick, onUnblock }: ScheduleCellProps
 
     if (schedule.state === 'bloqueada') {
       return (
-        <div className="h-full w-full p-2 border-b border-r border-gray-200 bg-amber-50/90 border-l-4 border-l-amber-500 flex flex-col justify-start gap-0.5 text-left group relative min-h-[64px] hover:bg-amber-100/40 transition-colors select-none">
+        <div
+          onClick={onClick}
+          title="Ver / editar bloqueo"
+          className="h-full w-full p-2 border-b border-r border-gray-200 bg-amber-50/90 border-l-4 border-l-amber-500 flex flex-col justify-start gap-0.5 text-left group relative min-h-[64px] hover:bg-amber-100/40 transition-colors select-none cursor-pointer"
+        >
           <div className="flex items-center justify-between w-full gap-1">
             <span className="text-[10px] font-bold text-amber-800 uppercase tracking-wider flex items-center gap-0.5 shrink-0">
               <Lock className="w-3 h-3 text-amber-600 animate-pulse shrink-0" />

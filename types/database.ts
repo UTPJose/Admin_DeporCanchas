@@ -53,17 +53,17 @@ export interface CanchaDisponibilidad {
 }
 
 // ==================== USUARIOS ====================
-// BD real: id, nombre, email, clave_hash, rol_id (FK roles), celular,
-// dni (varchar(8) UNIQUE, nullable), creado_en, actualizado_en, estaActivo.
+// BD real: id, nombre, email, clave_hash, roles_id (FK roles), celular,
+// dni (varchar(8) UNIQUE, nullable), creado_en, actualizado_en, esta_activo.
 // `rol` (string) NO existe como columna; se hidrata por join a roles.nombre
-// en los services. Se mantiene opcional aquí para compat con UI existente.
+// en los services.
 export interface Usuario {
   id: number
   nombre: string
   email: string
   clave_hash?: string       // bcrypt — nunca exponer al cliente
-  rol_id?: number           // FK roles.id (real)
-  rol?: RolNombre           // hidratado por join (`roles.nombre`) o por Java
+  roles_id?: number         // FK roles.id (real)
+  rol?: RolNombre           // hidratado por join (`roles.nombre`)
   celular?: string | null
   dni?: string | null       // varchar(8) UNIQUE, nullable
   creado_en: string

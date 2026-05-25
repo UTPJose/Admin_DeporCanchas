@@ -44,7 +44,7 @@ export const reservationsService = {
     
     const { data: usuarios, error: usuariosError } = await supabaseAdmin
       .from('usuarios')
-      .select('id, nombre, email, celular, dni, rol_id')
+      .select('id, nombre, email, celular, dni, roles_id')
       .in('id', usuarioIds)
 
     console.log('[RESERVATIONS SERVICE] Usuarios query error:', usuariosError)
@@ -90,15 +90,17 @@ export const reservationsService = {
     const campusMap = new Map(campus?.map((cp: any) => [cp.id, cp]) || [])
     const pagosMap = new Map(pagos?.map((p: any) => [p.reserva_id, p]) || [])
 
-    // Combinar datos
-    const result = reservas.map((r: any) => ({
-      ...r,
-      usuario: usuariosMap.get(r.usuarios_id),
-      cancha: canchasMap.get(r.canchasdep_id),
-      pago: pagosMap.get(r.id),
-    }))
+    // Combinar datos — anidar campus dentro de cancha para que la UI lo lea
+    const result = reservas.map((r: any) => {
+      const cancha = canchasMap.get(r.canchasdep_id)
+      return {
+        ...r,
+        usuario: usuariosMap.get(r.usuarios_id),
+        cancha: cancha ? { ...cancha, campus: campusMap.get(cancha.campus_id) ?? null } : null,
+        pago: pagosMap.get(r.id),
+      }
+    })
 
-    console.log('[RESERVATIONS SERVICE] Final result:', result)
     return result
   },
 
@@ -118,7 +120,7 @@ export const reservationsService = {
     // Traer usuario
     const { data: usuario } = await supabaseAdmin
       .from('usuarios')
-      .select('id, nombre, email, celular, dni, rol_id')
+      .select('id, nombre, email, celular, dni, roles_id')
       .eq('id', reserva.usuarios_id)
       .single()
 

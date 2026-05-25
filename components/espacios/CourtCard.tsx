@@ -1,28 +1,28 @@
 'use client'
 
-import { ReactNode } from 'react'
+export type CourtEstado = 'activo' | 'mantenimiento' | 'inactivo'
 
 interface CourtCardProps {
   name: string
   sport: string
   campus: string
   capacity: number
-  status: 'active' | 'maintenance' | 'inactive'
+  status: CourtEstado
   image?: string
   onEdit: () => void
   onDelete: () => void
 }
 
-const statusColors = {
-  active: 'bg-green-100 text-green-700',
-  maintenance: 'bg-amber-100 text-amber-700',
-  inactive: 'bg-gray-100 text-gray-700',
+const statusColors: Record<CourtEstado, string> = {
+  activo: 'bg-green-100 text-green-700',
+  mantenimiento: 'bg-amber-100 text-amber-700',
+  inactivo: 'bg-gray-100 text-gray-700',
 }
 
-const statusLabels = {
-  active: 'Activa',
-  maintenance: 'Mantenimiento',
-  inactive: 'Inactiva',
+const statusLabels: Record<CourtEstado, string> = {
+  activo: 'Activa',
+  mantenimiento: 'Mantenimiento',
+  inactivo: 'Inactiva',
 }
 
 export function CourtCard({ name, sport, campus, capacity, status, onEdit, onDelete }: CourtCardProps) {
@@ -43,8 +43,8 @@ export function CourtCard({ name, sport, campus, capacity, status, onEdit, onDel
         </div>
 
         <div className="mt-3 flex items-center justify-between">
-          <span className={`px-2 py-1 rounded text-xs font-medium ${statusColors[status]}`}>
-            {statusLabels[status]}
+          <span className={`px-2 py-1 rounded text-xs font-medium ${statusColors[status] ?? statusColors.activo}`}>
+            {statusLabels[status] ?? status}
           </span>
         </div>
 

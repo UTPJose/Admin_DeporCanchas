@@ -1,35 +1,48 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { jwtVerify } from 'jose'
 
 /**
- * Middleware - Protección de rutas
- * Verifica autenticación en rutas protegidas
+ * Middleware — protección de rutas del panel admin.
+ * - Páginas del dashboard: sin sesión válida → redirige a /login.
+ * - API de datos (`/api/*` excepto `/api/auth/*`): sin sesión válida → 401.
+ * Verifica la cookie `admin_session` (JWT firmado con ADMIN_JWT_SECRET).
+ * El re-check de rol/estado real vive en cada Route Handler con requireAdmin().
  */
 
-export function middleware(request: NextRequest) {
+const ADMIN_COOKIE = 'admin_session'
+
+const PROTECTED_PAGES = ['/dashboard', '/espacios', '/reservaciones', '/horarios', '/precios', '/reportes', '/configuracion']
+
+async function hasValidSession(token: string | undefined): Promise<boolean> {
+  if (!token) return false
+  try {
+    const secret = new TextEncoder().encode(process.env.ADMIN_JWT_SECRET)
+    await jwtVerify(token, secret, { algorithms: ['HS256'] })
+    return true
+  } catch {
+    return false
+  }
+}
+
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+  const token = request.cookies.get(ADMIN_COOKIE)?.value
+  const valid = await hasValidSession(token)
 
-  // Rutas públicas que no requieren autenticación
-  const publicRoutes = ['/login', '/register', '/']
-
-  // Rutas protegidas
-  const protectedRoutes = ['/dashboard', '/espacios', '/reservaciones', '/horarios', '/precios', '/reportes', '/configuracion']
-
-  // Verificar si es ruta pública
-  const isPublicRoute = publicRoutes.some((route) => pathname === route || pathname.startsWith(route))
-
-  // Verificar si es ruta protegida
-  const isProtectedRoute = protectedRoutes.some((route) => pathname.startsWith(route))
-
-  // Obtener token del request
-  const token = request.cookies.get('token')?.value || request.headers.get('authorization')?.replace('Bearer ', '')
-
-  // Si es ruta protegida y no hay token, redirigir a login
-  if (isProtectedRoute && !token) {
-    return NextResponse.redirect(new URL('/login', request.url))
+  // API de datos protegida (deja pasar /api/auth/*)
+  if (pathname.startsWith('/api/')) {
+    if (pathname.startsWith('/api/auth/')) return NextResponse.next()
+    if (!valid) {
+      return NextResponse.json({ success: false, error: 'unauthorized' }, { status: 401 })
+    }
+    return NextResponse.next()
   }
 
-  // Si es login/register y hay token, redirigir a dashboard
-  if ((pathname === '/login' || pathname === '/register') && token) {
+  const isProtectedPage = PROTECTED_PAGES.some((r) => pathname.startsWith(r))
+  if (isProtectedPage && !valid) {
+    return NextResponse.redirect(new URL('/login', request.url))
+  }
+  if (pathname === '/login' && valid) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
@@ -37,15 +50,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder
-     */
-    '/((?!api|_next/static|_next/image|favicon.ico|public).*)',
-  ],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|public).*)'],
 }

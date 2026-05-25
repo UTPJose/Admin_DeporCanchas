@@ -22,15 +22,25 @@ export async function GET(request: NextRequest) {
         response = await reportsService.getDashboardStats()
         break
 
-      case 'revenue':
-        if (!startDate || !endDate) {
+      case 'revenue': {
+        const period = searchParams.get('period')
+        let from = startDate
+        let to = endDate
+        if ((!from || !to) && period) {
+          const now = new Date()
+          const days = period === 'month' ? 30 : 7
+          to = now.toISOString()
+          from = new Date(now.getTime() - days * 24 * 60 * 60 * 1000).toISOString()
+        }
+        if (!from || !to) {
           return NextResponse.json(
-            { success: false, error: 'startDate y endDate requeridos' },
+            { success: false, error: 'startDate/endDate o period requeridos' },
             { status: 400 }
           )
         }
-        response = await reportsService.getRevenueByPeriod(startDate, endDate)
+        response = await reportsService.getRevenueByPeriod(from, to)
         break
+      }
 
       case 'by-deport':
         response = await reportsService.getReservationsByDeport()

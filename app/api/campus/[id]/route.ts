@@ -38,8 +38,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const { id } = await params
     const campusId = parseInt(id, 10)
     const body = await request.json()
+    const { id: _ignore, ...updates } = body
 
-    const updatedCampus = await campusService.updateCampus(campusId, body)
+    const updatedCampus = await campusService.updateCampus(campusId, updates)
 
     return NextResponse.json({
       success: true,

@@ -3,11 +3,11 @@
 import { useState } from 'react'
 import { X } from 'lucide-react'
 
-interface Admin {
+export interface Admin {
   id: number
-  username: string
   email: string
   nombre: string
+  celular?: string | null
   estado: string
 }
 
@@ -17,11 +17,11 @@ interface AdminFormProps {
 }
 
 export function AdminForm({ admin, onClose }: AdminFormProps) {
+  const isEdit = !!admin
   const [nombre, setNombre] = useState(admin?.nombre || '')
-  const [username, setUsername] = useState(admin?.username || '')
   const [email, setEmail] = useState(admin?.email || '')
+  const [celular, setCelular] = useState(admin?.celular || '')
   const [password, setPassword] = useState('')
-  const [estado, setEstado] = useState(admin?.estado || 'activo')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -31,28 +31,24 @@ export function AdminForm({ admin, onClose }: AdminFormProps) {
     setLoading(true)
 
     try {
-      const body: any = { nombre, username, email, estado }
-
-      if (password) {
-        body.password = password
-      }
-
-      const url = admin ? `/api/auth/admins/${admin.id}` : '/api/auth/admins'
-      const method = admin ? 'PUT' : 'POST'
+      const url = isEdit ? `/api/admins/${admin!.id}` : '/api/admins'
+      const method = isEdit ? 'PATCH' : 'POST'
+      const body: Record<string, unknown> = isEdit
+        ? { nombre, celular }
+        : { nombre, email, celular, password }
+      if (password) body.password = password
 
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       })
-
       const result = await response.json()
 
       if (!result.success) {
         setError(result.error || 'Error al guardar administrador')
         return
       }
-
       onClose()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido')
@@ -66,12 +62,9 @@ export function AdminForm({ admin, onClose }: AdminFormProps) {
       <div className="bg-white rounded-lg shadow-lg w-full max-w-md mx-4 p-6">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-bold text-gray-900">
-            {admin ? 'Editar Administrador' : 'Nuevo Administrador'}
+            {isEdit ? 'Editar administrador' : 'Nuevo administrador'}
           </h2>
-          <button
-            onClick={onClose}
-            className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
-          >
+          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-lg transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -80,22 +73,11 @@ export function AdminForm({ admin, onClose }: AdminFormProps) {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nombre Completo</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Nombre completo</label>
             <input
               type="text"
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
-              required
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Usuario</label>
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
               required
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
             />
@@ -108,47 +90,37 @@ export function AdminForm({ admin, onClose }: AdminFormProps) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              disabled={isEdit}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm disabled:bg-gray-100 disabled:text-gray-500"
+            />
+            {isEdit && <p className="text-xs text-gray-400 mt-1">El email no se puede cambiar.</p>}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Celular (opcional)</label>
+            <input
+              type="tel"
+              inputMode="numeric"
+              maxLength={9}
+              value={celular ?? ''}
+              onChange={(e) => setCelular(e.target.value.replace(/\D/g, '').slice(0, 9))}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
             />
           </div>
 
-          {!admin && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required={!admin}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-              />
-            </div>
-          )}
-
-          {admin && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Nueva Contraseña (dejar vacío para mantener)
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-              />
-            </div>
-          )}
-
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
-            <select
-              value={estado}
-              onChange={(e) => setEstado(e.target.value)}
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {isEdit ? 'Nueva contraseña (dejar vacío para mantener)' : 'Contraseña'}
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required={!isEdit}
+              minLength={8}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-            >
-              <option value="activo">Activo</option>
-              <option value="inactivo">Inactivo</option>
-            </select>
+            />
+            <p className="text-xs text-gray-400 mt-1">Mínimo 8 caracteres.</p>
           </div>
 
           <div className="flex gap-3 pt-4">

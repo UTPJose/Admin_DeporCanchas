@@ -2,27 +2,28 @@
 
 import { useState } from 'react'
 import { StatusBadge } from './StatusBadge'
+import type { EstadoMostrado } from '@/lib/estado-reserva'
 
-interface Reservation {
+export interface Reservation {
   id: number
   usuario_nombre: string
   usuario_email: string
   campus_nombre: string
   cancha_nombre: string
-  fecha: string
-  hora_inicio: string
+  fechaLabel: string
+  horaLabel: string
+  metodoPago: string | null
   precio: number
-  estado: string
+  estado: EstadoMostrado
 }
 
 interface ReservationsTableProps {
   data: Reservation[]
   loading?: boolean
-  onStatusChange?: (id: number, newStatus: string) => Promise<void>
-  onCancel?: (id: number) => Promise<void>
+  onCancel?: (id: number) => Promise<void> | void
 }
 
-export function ReservationsTable({ data, loading, onStatusChange, onCancel }: ReservationsTableProps) {
+export function ReservationsTable({ data, loading, onCancel }: ReservationsTableProps) {
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [isDetailOpen, setIsDetailOpen] = useState(false)
 
@@ -41,6 +42,9 @@ export function ReservationsTable({ data, loading, onStatusChange, onCancel }: R
     setIsDetailOpen(true)
   }
 
+  // Solo se puede cancelar lo que está vigente (programada o pendiente de pago)
+  const cancelable = (estado: EstadoMostrado) => estado === 'programada' || estado === 'pendiente'
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
       <div className="lg:col-span-3">
@@ -50,7 +54,7 @@ export function ReservationsTable({ data, loading, onStatusChange, onCancel }: R
               <tr>
                 <th className="px-4 py-3 text-left font-semibold text-gray-700">Cliente</th>
                 <th className="px-4 py-3 text-left font-semibold text-gray-700">Cancha</th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-700">Fecha</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-700">Fecha y hora</th>
                 <th className="px-4 py-3 text-left font-semibold text-gray-700">Precio</th>
                 <th className="px-4 py-3 text-left font-semibold text-gray-700">Estado</th>
               </tr>
@@ -72,43 +76,26 @@ export function ReservationsTable({ data, loading, onStatusChange, onCancel }: R
                     }`}
                   >
                     <td className="px-4 py-3">
-                      <div>
-                        <p className="font-medium text-gray-900">{res.usuario_nombre}</p>
-                        <p className="text-xs text-gray-500">{res.usuario_email}</p>
-                      </div>
+                      <p className="font-medium text-gray-900">{res.usuario_nombre}</p>
+                      <p className="text-xs text-gray-500">{res.usuario_email}</p>
                     </td>
                     <td className="px-4 py-3">
-                      <div>
-                        <p className="font-medium text-gray-900">{res.cancha_nombre}</p>
-                        <p className="text-xs text-gray-500">{res.campus_nombre}</p>
-                      </div>
+                      <p className="font-medium text-gray-900">{res.cancha_nombre}</p>
+                      <p className="text-xs text-gray-500">{res.campus_nombre}</p>
                     </td>
                     <td className="px-4 py-3">
-                      <div>
-                        <p>{new Date(res.fecha).toLocaleDateString('es-PE')}</p>
-                        <p className="text-xs text-gray-500">{res.hora_inicio}</p>
-                      </div>
+                      <p>{res.fechaLabel}</p>
+                      <p className="text-xs text-gray-500">{res.horaLabel}</p>
                     </td>
-                    <td className="px-4 py-3 font-semibold text-gray-900">S/ {res.precio}</td>
+                    <td className="px-4 py-3 font-semibold text-gray-900">S/ {res.precio.toFixed(2)}</td>
                     <td className="px-4 py-3">
-                      <StatusBadge status={res.estado} />
+                      <StatusBadge estado={res.estado} />
                     </td>
                   </tr>
                 ))
               )}
             </tbody>
           </table>
-        </div>
-
-        <div className="mt-4 flex justify-center gap-2">
-          {[1, 2, 3].map((p) => (
-            <button
-              key={p}
-              className="px-3 py-1 rounded border border-gray-300 text-sm hover:bg-gray-50 transition-colors"
-            >
-              {p}
-            </button>
-          ))}
         </div>
       </div>
 
@@ -121,7 +108,7 @@ export function ReservationsTable({ data, loading, onStatusChange, onCancel }: R
             ×
           </button>
 
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Detalles</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Detalle</h3>
 
           <div className="space-y-3 text-sm">
             <div>
@@ -137,43 +124,40 @@ export function ReservationsTable({ data, loading, onStatusChange, onCancel }: R
             </div>
 
             <div className="pt-3 border-t border-gray-200">
-              <p className="text-gray-600">Fecha y Hora</p>
-              <p className="font-medium text-gray-900">{new Date(selected.fecha).toLocaleDateString('es-PE')}</p>
-              <p className="text-gray-500">{selected.hora_inicio}</p>
+              <p className="text-gray-600">Fecha y hora</p>
+              <p className="font-medium text-gray-900">{selected.fechaLabel}</p>
+              <p className="text-gray-500">{selected.horaLabel}</p>
             </div>
+
+            {selected.metodoPago && (
+              <div className="pt-3 border-t border-gray-200">
+                <p className="text-gray-600">Método de pago</p>
+                <p className="font-medium text-gray-900 capitalize">{selected.metodoPago}</p>
+              </div>
+            )}
 
             <div className="pt-3 border-t border-gray-200">
               <p className="text-gray-600">Precio</p>
-              <p className="text-2xl font-bold text-gray-900">S/ {selected.precio}</p>
+              <p className="text-2xl font-bold text-gray-900">S/ {selected.precio.toFixed(2)}</p>
             </div>
 
             <div className="pt-3 border-t border-gray-200">
               <p className="text-gray-600">Estado</p>
               <p className="mt-2">
-                <StatusBadge status={selected.estado} />
+                <StatusBadge estado={selected.estado} />
               </p>
             </div>
 
-            <div className="pt-4 border-t border-gray-200 space-y-2">
-              {selected.estado !== 'cancelado' && (
-                <>
-                  <button
-                    onClick={() => onCancel?.(selected.id)}
-                    className="w-full px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm font-medium transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                  {selected.estado !== 'finalizado' && (
-                    <button
-                      onClick={() => onStatusChange?.(selected.id, 'finalizado')}
-                      className="w-full px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm font-medium transition-colors"
-                    >
-                      Marcar Finalizado
-                    </button>
-                  )}
-                </>
-              )}
-            </div>
+            {cancelable(selected.estado) && (
+              <div className="pt-4 border-t border-gray-200">
+                <button
+                  onClick={() => onCancel?.(selected.id)}
+                  className="w-full px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm font-medium transition-colors"
+                >
+                  Cancelar reserva
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

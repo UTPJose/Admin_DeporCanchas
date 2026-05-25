@@ -1,100 +1,79 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { FilterBar, FilterValues } from '@/components/reservaciones/FilterBar'
-import { ReservationsTable } from '@/components/reservaciones/ReservationsTable'
+import { ReservationsTable, type Reservation } from '@/components/reservaciones/ReservationsTable'
+import { estadoMostrado, pasaFiltro, type FiltroReserva } from '@/lib/estado-reserva'
 
-interface Reservation {
-  id: number
-  usuario_nombre: string
-  usuario_email: string
-  campus_nombre: string
-  cancha_nombre: string
-  fecha: string
-  hora_inicio: string
-  precio: number
-  estado: string
-}
+const LIMA_TZ = 'America/Lima'
+const fmtFecha = (iso: string) =>
+  new Intl.DateTimeFormat('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: LIMA_TZ }).format(new Date(iso))
+const fmtHora = (iso: string) =>
+  new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: LIMA_TZ }).format(new Date(iso))
 
 export default function ReservacionesPage() {
-  const [reservations, setReservations] = useState<Reservation[]>([])
+  const [raw, setRaw] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [filters, setFilters] = useState<FilterValues>({})
+  const [filters, setFilters] = useState<FilterValues>({ status: 'todas' })
 
   const fetchReservations = async () => {
     try {
       setLoading(true)
       setError(null)
-
       const params = new URLSearchParams()
       if (filters.dateFrom) params.append('fecha_inicio', filters.dateFrom)
       if (filters.dateTo) params.append('fecha_fin', filters.dateTo)
-      if (filters.status) params.append('estado', filters.status)
       if (filters.email) params.append('usuario_email', filters.email)
+      params.append('limit', '100')
 
       const res = await fetch(`/api/reservations?${params.toString()}`)
-
       if (!res.ok) throw new Error('Error al cargar reservaciones')
-
       const data = await res.json()
-      console.log('API Response:', data)
-      console.log('Raw data array:', data.data)
-      
-      const mapped = data.data?.map((r: any) => ({
-        id: r.id,
-        usuario_nombre: r.usuario?.nombre || 'Unknown',
-        usuario_email: r.usuario?.email || 'unknown@example.com',
-        campus_nombre: r.cancha?.campus?.nombre || 'Unknown',
-        cancha_nombre: r.cancha?.nombre || 'Unknown',
-        fecha: r.fecha_empieza,
-        hora_inicio: r.fecha_empieza,
-        precio: r.precio_total,
-        estado: r.estado || 'pendiente',
-      })) || []
-      
-      console.log('Mapped reservations:', mapped)
-      setReservations(mapped)
+      setRaw(data.data || [])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido')
-      console.error('Error:', err)
     } finally {
       setLoading(false)
     }
   }
 
-  
   useEffect(() => {
     fetchReservations()
-  }, [filters])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters.dateFrom, filters.dateTo, filters.email])
 
-  const handleStatusChange = async (id: number, newStatus: string) => {
-    try {
-      const res = await fetch(`/api/reservations/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ estado: newStatus }),
+  const reservations: Reservation[] = useMemo(() => {
+    const filtro = (filters.status as FiltroReserva) || 'todas'
+    return (raw || [])
+      .filter((r) => pasaFiltro(filtro, r.estado, r.fecha_termina))
+      .filter((r) => {
+        if (!filters.campus) return true
+        const campus = r.cancha?.campus?.nombre?.toLowerCase() || ''
+        return campus.includes(filters.campus.toLowerCase())
       })
-
-      if (!res.ok) throw new Error('Error al actualizar')
-      fetchReservations()
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'Error al actualizar')
-    }
-  }
+      .map((r) => ({
+        id: r.id,
+        usuario_nombre: r.usuario?.nombre || '—',
+        usuario_email: r.usuario?.email || '—',
+        campus_nombre: r.cancha?.campus?.nombre || '—',
+        cancha_nombre: r.cancha?.nombre || '—',
+        fechaLabel: fmtFecha(r.fecha_empieza),
+        horaLabel: `${fmtHora(r.fecha_empieza)} - ${fmtHora(r.fecha_termina)}`,
+        metodoPago: r.pago?.metodo_pago || null,
+        precio: r.precio_total,
+        estado: estadoMostrado(r.estado, r.fecha_termina),
+      }))
+  }, [raw, filters.status, filters.campus])
 
   const handleCancel = async (id: number) => {
-    if (confirm('¿Estás seguro de que deseas cancelar esta reservación?')) {
-      try {
-        const res = await fetch(`/api/reservations/${id}`, {
-          method: 'DELETE',
-        })
-
-        if (!res.ok) throw new Error('Error al cancelar')
-        fetchReservations()
-      } catch (err) {
-        alert(err instanceof Error ? err.message : 'Error al cancelar')
-      }
+    if (!confirm('¿Cancelar esta reservación? El horario quedará libre.')) return
+    try {
+      const res = await fetch(`/api/reservations/${id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Error al cancelar')
+      fetchReservations()
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Error al cancelar')
     }
   }
 
@@ -109,12 +88,7 @@ export default function ReservacionesPage() {
 
       <FilterBar onFilterChange={(newFilters) => setFilters({ ...filters, ...newFilters })} />
 
-      <ReservationsTable
-        data={reservations}
-        loading={loading}
-        onStatusChange={handleStatusChange}
-        onCancel={handleCancel}
-      />
+      <ReservationsTable data={reservations} loading={loading} onCancel={handleCancel} />
     </div>
   )
 }

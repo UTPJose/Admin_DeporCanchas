@@ -1,159 +1,70 @@
 'use client'
 
 import React, { createContext, useCallback, useEffect, useState } from 'react'
-import { getUser, saveUser, clearAuthData, getToken, saveTokens, isTokenExpired } from './tokens'
 
 /**
- * Auth Context - Global state for authentication
+ * Auth Context — sesión admin basada en cookie httpOnly (admin_session).
+ * El token vive solo en la cookie; el cliente nunca lo ve. Para conocer al
+ * usuario actual se consulta /api/auth/me.
  */
 
-interface StoredUser {
+export interface AdminUser {
   id: number
   email: string
   nombre: string
-  rol: string
+  celular?: string | null
+  dni?: string | null
+  roles_id: number
+  rol_nombre: string
 }
 
 interface AuthContextType {
-  user: StoredUser | null
+  user: AdminUser | null
   isAuthenticated: boolean
   isLoading: boolean
-  login: (user: StoredUser, tokens: unknown) => void
-  logout: () => void
-  setUser: (user: StoredUser | null) => void
-  checkAuth: () => Promise<boolean>
+  refresh: () => Promise<void>
+  logout: () => Promise<void>
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-interface AuthProviderProps {
-  children: React.ReactNode
-}
-
-/**
- * Auth Provider Component
- */
-export function AuthProvider({ children }: AuthProviderProps) {
-  const [user, setUserState] = useState<StoredUser | null>(null)
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<AdminUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  // Check authentication on mount
-  useEffect(() => {
-    const checkAuthentication = async () => {
-      setIsLoading(true)
-      try {
-        const storedUser = getUser()
-        const token = getToken()
-
-        if (storedUser && token && !isTokenExpired()) {
-          setUserState(storedUser)
-        } else if (token && isTokenExpired()) {
-          // Try to refresh token
-          const refreshed = await refreshToken()
-          if (!refreshed) {
-            clearAuthData()
-            setUserState(null)
-          } else {
-            const refreshedUser = getUser()
-            setUserState(refreshedUser)
-          }
-        } else {
-          setUserState(null)
-        }
-      } catch (error) {
-        console.error('Error checking authentication:', error)
-        setUserState(null)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    checkAuthentication()
-  }, [])
-
-  const login = useCallback((newUser: StoredUser, tokens: any) => {
-    saveUser(newUser)
-    saveTokens({
-      token: tokens.token,
-      sessionToken: tokens.sessionToken,
-      refreshToken: tokens.refreshToken,
-      expiresIn: tokens.expiresIn,
-      expiresAt: Date.now() + tokens.expiresIn * 1000,
-    })
-    setUserState(newUser)
-  }, [])
-
-  const logout = useCallback(() => {
-    clearAuthData()
-    setUserState(null)
-  }, [])
-
-  const setUser = useCallback((newUser: StoredUser | null) => {
-    if (newUser) {
-      saveUser(newUser)
-    } else {
-      clearAuthData()
-    }
-    setUserState(newUser)
-  }, [])
-
-  const checkAuth = useCallback(async (): Promise<boolean> => {
+  const refresh = useCallback(async () => {
+    setIsLoading(true)
     try {
-      const token = getToken()
-      if (!token) return false
-
-      const response = await fetch('/api/auth/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token }),
-      })
-
-      return response.ok
-    } catch (error) {
-      console.error('Error checking auth:', error)
-      return false
+      const res = await fetch('/api/auth/me', { cache: 'no-store' })
+      if (res.ok) {
+        const json = await res.json()
+        setUser(json?.data?.user ?? null)
+      } else {
+        setUser(null)
+      }
+    } catch {
+      setUser(null)
+    } finally {
+      setIsLoading(false)
     }
   }, [])
+
+  const logout = useCallback(async () => {
+    await fetch('/api/auth/logout', { method: 'POST' }).catch(() => {})
+    setUser(null)
+  }, [])
+
+  useEffect(() => {
+    refresh()
+  }, [refresh])
 
   const value: AuthContextType = {
     user,
     isAuthenticated: !!user,
     isLoading,
-    login,
+    refresh,
     logout,
-    setUser,
-    checkAuth,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
-}
-
-/**
- * Helper function to refresh token
- */
-async function refreshToken(): Promise<boolean> {
-  try {
-    const response = await fetch('/api/auth/refresh', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-    })
-
-    if (!response.ok) return false
-
-    const data = await response.json()
-    if (data.tokens) {
-      saveTokens({
-        token: data.tokens.token,
-        sessionToken: data.tokens.sessionToken,
-        refreshToken: data.tokens.refreshToken,
-        expiresIn: data.tokens.expiresIn,
-        expiresAt: Date.now() + data.tokens.expiresIn * 1000,
-      })
-      return true
-    }
-    return false
-  } catch (error) {
-    console.error('Error refreshing token:', error)
-    return false
-  }
 }

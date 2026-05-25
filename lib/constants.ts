@@ -9,69 +9,62 @@ export const SITE_DESCRIPTION = 'Panel administrativo para gestión de canchas d
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
 export const AUTH_SERVICE_URL = process.env.NEXT_PUBLIC_AUTH_SERVICE_URL || 'http://localhost:8080'
 
-// Roles — BD real solo tiene 'cliente' y 'admin'. SUPER_ADMIN / USUARIO
-// quedan como legacy para compat con UI antigua.
+// Roles — BD real: 'cliente' y 'admin' (+ legacy 'ROLE_ADMIN'/'ROLE_USER' del antiguo servicio Java).
 export const ROLES = {
   ADMIN: 'admin',
   CLIENTE: 'cliente',
-  SUPER_ADMIN: 'super_admin',
-  USUARIO: 'usuario',
 } as const
 
-// Estados de reserva en BD real: pendiente | pagada | cancelada | expirada.
-// Se mantienen claves legacy apuntando a los valores nuevos para no romper
-// código viejo (RESERVADO→pagada, FINALIZADO→pagada, CANCELADO→cancelada).
+// Estados de reserva (BD real, único vocabulario).
 export const ESTADOS_RESERVA = {
   PENDIENTE: 'pendiente',
   PAGADA: 'pagada',
   CANCELADA: 'cancelada',
   EXPIRADA: 'expirada',
-  BLOQUEADA: 'bloqueada',
-  // Aliases legacy
-  RESERVADO: 'pagada',
-  FINALIZADO: 'pagada',
-  CANCELADO: 'cancelada',
 } as const
 
-// Estados de pago en BD real: pendiente | exitoso | fallido | reembolsado.
+// Estados de pago (BD real).
 export const ESTADOS_PAGO = {
   PENDIENTE: 'pendiente',
   EXITOSO: 'exitoso',
   FALLIDO: 'fallido',
   REEMBOLSADO: 'reembolsado',
-  // Aliases legacy
-  COMPLETADO: 'exitoso',
 } as const
 
+// Estado de cancha (BD real, español).
 export const ESTADOS_CANCHA = {
-  DISPONIBLE: 'disponible',
-  BLOQUEADO: 'bloqueado',
-  MANTENIMIENTO: 'mantenimiento',
-} as const
-
-export const ESTADOS_CAMPUS = {
   ACTIVO: 'activo',
   INACTIVO: 'inactivo',
   MANTENIMIENTO: 'mantenimiento',
 } as const
 
-// Deportes
-export const DEPORTES = {
-  FUTBOL: 'futbol',
-  VOLEY: 'voley',
-  BASQUET: 'basquet',
-  TENIS: 'tenis',
+// Estado de campus (BD real, español).
+export const ESTADOS_CAMPUS = {
+  ACTIVO: 'activo',
+  INACTIVO: 'inactivo',
 } as const
 
+// Tipos de cancha. `value` es lo que se guarda en BD (sin tildes, evita problemas
+// de encoding); `label` es lo que se muestra en la UI (con tildes). El cliente
+// reconoce los `value` (normaliza tildes) para tarifas/filtros. Fútbol 11 y 7 son
+// tipos distintos. Lista extensible: agregar aquí habilita el tipo en el formulario.
+export const TIPOS_CANCHA: { value: string; label: string }[] = [
+  { value: 'Futbol 11', label: 'Fútbol 11' },
+  { value: 'Futbol 7', label: 'Fútbol 7' },
+  { value: 'Tenis', label: 'Tenis' },
+  { value: 'Padel', label: 'Pádel' },
+]
+
+/** Etiqueta a mostrar para un tipo guardado (con tilde); si no está en la lista, devuelve el valor tal cual. */
+export function tipoCanchaLabel(value: string): string {
+  return TIPOS_CANCHA.find((t) => t.value === value)?.label ?? value
+}
+
 // Métodos de pago — BD real solo soporta yape | plin | tarjeta.
-// TRANSFERENCIA / EFECTIVO quedan como legacy y no se persisten así.
 export const METODOS_PAGO = {
   YAPE: 'yape',
   PLIN: 'plin',
   TARJETA: 'tarjeta',
-  // Aliases legacy
-  TRANSFERENCIA: 'transferencia',
-  EFECTIVO: 'efectivo',
 } as const
 
 // Periodicidad

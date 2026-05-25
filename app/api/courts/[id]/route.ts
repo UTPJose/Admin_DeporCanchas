@@ -38,8 +38,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const { id } = await params
     const courtId = parseInt(id, 10)
     const body = await request.json()
+    // El form puede incluir `id`/campos no-columna; solo enviamos columnas editables
+    const { id: _ignore, campus: _c, cancha_disponibilidad: _d, tarifas_canchasdep: _t, ...updates } = body
 
-    const updatedCourt = await courtsService.updateCourt(courtId, body)
+    const updatedCourt = await courtsService.updateCourt(courtId, updates)
 
     return NextResponse.json({
       success: true,

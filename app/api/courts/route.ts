@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
       nombre: body.nombre,
       tipo_deporte: body.tipo_deporte,
       cantidad_jugadores: body.cantidad_jugadores,
-      estado: body.estado || 'disponible',
+      estado: body.estado || 'activo',
     })
 
     return NextResponse.json(

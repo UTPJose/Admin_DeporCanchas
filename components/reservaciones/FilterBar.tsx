@@ -48,11 +48,12 @@ export function FilterBar({ onFilterChange }: FilterBarProps) {
             onChange={(e) => handleChange('status', e.target.value)}
             className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-600"
           >
-            <option value="">Todos</option>
-            <option value="pendiente">Pendiente</option>
-            <option value="reservado">Reservado</option>
-            <option value="finalizado">Finalizado</option>
-            <option value="cancelado">Cancelado</option>
+            <option value="todas">Todas</option>
+            <option value="programadas">Programadas</option>
+            <option value="finalizadas">Finalizadas</option>
+            <option value="pendientes">Pendientes</option>
+            <option value="canceladas">Canceladas</option>
+            <option value="expiradas">Expiradas</option>
           </select>
         </div>
 

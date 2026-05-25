@@ -8,6 +8,7 @@ import { ControlBar } from '@/components/horarios/ControlBar'
 import { WeeklyCalendar } from '@/components/horarios/WeeklyCalendar'
 import { BlockModal } from '@/components/horarios/BlockModal'
 import { ConfirmModal } from '@/components/common/ConfirmModal'
+import { weekStartYMD, addDaysYMD, limaYMD, limaHour, limaMinutes } from '@/lib/lima-time'
 
 interface Court {
   id: number
@@ -27,6 +28,7 @@ interface ScheduleBlock {
   end_date: string
   reason?: string
   state: 'bloqueada' | 'reservado' | 'disponible'
+  user_email?: string
 }
 
 export default function HorariosPage() {
@@ -34,13 +36,14 @@ export default function HorariosPage() {
   const [campuses, setCampuses] = useState<Campus[]>([])
   const [selectedCourt, setSelectedCourt] = useState<number | null>(null)
   const [selectedCampus, setSelectedCampus] = useState<number | null>(null)
-  const [weekStart, setWeekStart] = useState<string>(getWeekStart(new Date()))
-  const [weekEnd, setWeekEnd] = useState<string>(getWeekEnd(new Date()))
+  const [weekStart, setWeekStart] = useState<string>(weekStartYMD(limaYMD()))
+  const [weekEnd, setWeekEnd] = useState<string>(addDaysYMD(weekStartYMD(limaYMD()), 6))
   const [schedules, setSchedules] = useState<ScheduleBlock[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showBlockModal, setShowBlockModal] = useState(false)
   const [selectedSlot, setSelectedSlot] = useState<{ date: string; startTime: string; endTime: string } | null>(null)
+  const [editingBlock, setEditingBlock] = useState<ScheduleBlock | null>(null)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [pendingUnblockId, setPendingUnblockId] = useState<number | null>(null)
 
@@ -110,17 +113,15 @@ export default function HorariosPage() {
   }
 
   const handlePrevWeek = () => {
-    const newDate = new Date(weekStart)
-    newDate.setDate(newDate.getDate() - 7)
-    setWeekStart(getWeekStart(newDate))
-    setWeekEnd(getWeekEnd(newDate))
+    const ns = addDaysYMD(weekStart, -7)
+    setWeekStart(ns)
+    setWeekEnd(addDaysYMD(ns, 6))
   }
 
   const handleNextWeek = () => {
-    const newDate = new Date(weekStart)
-    newDate.setDate(newDate.getDate() + 7)
-    setWeekStart(getWeekStart(newDate))
-    setWeekEnd(getWeekEnd(newDate))
+    const ns = addDaysYMD(weekStart, 7)
+    setWeekStart(ns)
+    setWeekEnd(addDaysYMD(ns, 6))
   }
 
   const handleCellClick = (date: string, startTime: string, endTime: string) => {
@@ -130,6 +131,15 @@ export default function HorariosPage() {
 
   const handleBlockSaved = () => {
     setShowBlockModal(false)
+    fetchSchedules()
+  }
+
+  const handleEditBlock = (block: ScheduleBlock) => {
+    setEditingBlock(block)
+  }
+
+  const handleEditSaved = () => {
+    setEditingBlock(null)
     fetchSchedules()
   }
 
@@ -192,6 +202,7 @@ export default function HorariosPage() {
               schedules={schedules}
               onCellClick={handleCellClick}
               onUnblock={handleUnblock}
+              onEditBlock={handleEditBlock}
             />
           )}
         </div>
@@ -205,6 +216,29 @@ export default function HorariosPage() {
           initialEndTime={selectedSlot.endTime}
           onClose={() => setShowBlockModal(false)}
           onSave={handleBlockSaved}
+        />
+      )}
+
+      {editingBlock && (
+        <BlockModal
+          courtId={selectedCourt!}
+          blockId={editingBlock.id}
+          initialDate={limaYMD(editingBlock.start_date)}
+          initialStartTime={`${limaHour(editingBlock.start_date)
+            .toString()
+            .padStart(2, '0')}:${limaMinutes(editingBlock.start_date).toString().padStart(2, '0')}`}
+          initialEndTime={`${limaHour(editingBlock.end_date)
+            .toString()
+            .padStart(2, '0')}:${limaMinutes(editingBlock.end_date).toString().padStart(2, '0')}`}
+          initialReason={editingBlock.reason === 'Bloqueo Manual' ? '' : editingBlock.reason}
+          createdByEmail={editingBlock.user_email}
+          onClose={() => setEditingBlock(null)}
+          onSave={handleEditSaved}
+          onDelete={() => {
+            const id = editingBlock.id
+            setEditingBlock(null)
+            handleUnblock(id)
+          }}
         />
       )}
 
@@ -225,14 +259,3 @@ export default function HorariosPage() {
   )
 }
 
-function getWeekStart(date: Date): string {
-  const d = new Date(date)
-  d.setDate(d.getDate() - d.getDay() + 1)
-  return d.toISOString().split('T')[0]
-}
-
-function getWeekEnd(date: Date): string {
-  const d = new Date(date)
-  d.setDate(d.getDate() - d.getDay() + 7)
-  return d.toISOString().split('T')[0]
-}

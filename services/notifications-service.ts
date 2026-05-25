@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase'
+import { supabaseAdmin as supabase } from '@/lib/supabase'
 import { Notificacion } from '@/types/database'
 
 /**
@@ -14,6 +14,20 @@ export const notificationsService = {
       .from('notificaciones')
       .select('*')
       .eq('usuarios_id', userId)
+      .order('creado_en', { ascending: false })
+      .limit(limit)
+
+    if (error) throw new Error(`Error al obtener notificaciones: ${error.message}`)
+    return data || []
+  },
+
+  /**
+   * Obtener notificaciones recientes de todos los usuarios (vista admin / dashboard).
+   */
+  async getRecentNotifications(limit = 10): Promise<Notificacion[]> {
+    const { data, error } = await supabase
+      .from('notificaciones')
+      .select('*')
       .order('creado_en', { ascending: false })
       .limit(limit)
 

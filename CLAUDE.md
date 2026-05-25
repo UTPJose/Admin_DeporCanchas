@@ -7,114 +7,64 @@ No repitas código sin cambios en tus respuestas.
 Sin preámbulos, sin resúmenes al final, sin explicar lo obvio.
 Testea antes de dar por terminado.
 
-# Contexto del proyecto
+# Panel Admin — DeporCanchas
 
-**Panel de administración** del sistema de reservas de **DeporCanchas Lima S.A.C.** Es la contraparte admin del proyecto cliente que vive en `../Reservas_DeporCanchas/`. Ambos proyectos **comparten la misma base de datos Supabase** y deben respetar el mismo esquema.
-
-- **Repo cliente (referencia obligatoria del schema):** `../Reservas_DeporCanchas/`
-- **Spec del sistema completo:** `../Reservas_DeporCanchas/docs/superpowers/specs/2026-05-11-reservas-deporcanchas-design.md`
-- **Plan de este admin:** `system-reminder-the-user-provided-proud-pixel.md`
+Contraparte admin del cliente (`../Reservas_DeporCanchas/`). **Misma BD Supabase y mismo esquema.** El esquema y las reglas compartidas viven en el `CLAUDE.md` raíz (`../CLAUDE.md`).
 
 ## Stack
 
-- Next.js 16 (App Router) + React 19 + TypeScript
-- Tailwind 4 + lucide-react + recharts (gráficos) + shadcn/ui
-- Supabase (Postgres + Storage) — **misma instancia que el cliente**
-- **Auth vía microservicio Java Spring Boot** externo (`NEXT_PUBLIC_AUTH_SERVICE_URL` + `/api/v1/auth`). Devuelve `token`+`refreshToken`+`sessionToken` que se guardan en cookie (`Secure; SameSite=Lax`) y localStorage. Distinto al cliente, que sí usa JWT propio. La BD `usuarios.clave_hash` la administra el servicio Java. No mover esto.
-- zod (validación), react-hook-form, zustand
-- axios / fetch contra Route Handlers propios con `service_role`
+Next.js 16 (App Router) + React 19 + TS · Tailwind 4 · lucide-react · recharts · Supabase (misma instancia) · bcryptjs + jose · zod · react-hook-form · zustand.
 
-## Decisiones de arquitectura clave (heredadas del cliente)
+## Auth (unificado con el cliente, endurecido)
 
-1. **Auth = microservicio Java externo.** El admin **solo acepta sesión con rol `admin`** (`ROLE_ADMIN` desde el servicio). El servicio valida contra la tabla `usuarios` (FK a `roles`). Los tokens se persisten en cookie no-HttpOnly (limitación de `document.cookie`) con `Secure; SameSite=Lax` y en `localStorage` como respaldo. **No hay JWT firmado en Next.js**. El cliente, en cambio, sí usa JWT propio — los dos flujos son distintos y conviven sobre la misma BD.
-2. **Acceso a datos:** toda escritura y lectura sensible va por Route Handlers en `app/api/*` con `service_role`. El cliente del navegador nunca toca la `service_role_key`. Lectura pública (anon) se limita a catálogos.
-3. **Estados de reserva:** `pendiente | pagada | cancelada | expirada` (no `reservado/finalizado`). El admin filtra y muestra esto literal.
-4. **Pagos** son **simulados** (`pagos.simulated = true`): `metodo_pago` ∈ `yape|plin|tarjeta`, `estado='exitoso'` al confirmar. El admin solo consulta — no genera vouchers ni emite. Lectura de `voucher_url`, `voucher_serie`, `voucher_correlativo`, `comprobante_yape_url` ya existentes.
-5. **Cancelación admin-side:** el admin puede cancelar cualquier reserva pagada/pendiente sin la restricción de >24h del cliente. La regla de >24h aplica solo al user en `/mis-reservas`.
-6. **DNI** en `usuarios` es nullable. El admin lo muestra readonly; no lo edita.
-7. **Notificaciones in-app** (tabla `notificaciones`): el admin puede escribir aquí para mensajes a usuarios. El cliente solo lee.
-8. **Historial:** `historial_reservas` se llena por **trigger** en cada cambio de `reservas`. El admin lo lee, nunca lo escribe.
+- **Mismo motor que el cliente**: bcrypt (`usuarios.clave_hash`) + JWT (`jose`) sobre `usuarios`/`roles`. **Sin microservicio Java.**
+- Cookie `admin_session`: `httpOnly + Secure + SameSite=Strict`, **1 día**, secret propio `ADMIN_JWT_SECRET`.
+- `requireAdmin()` en cada Route Handler: valida JWT + re-consulta BD (`roles_id = admin` y `esta_activo`).
+- Login **rechaza** rol ≠ admin. Rate limit 5/min por IP.
+- **Sin registro público.** Primer admin sembrado (script). Admins extra se crean **solo desde Configuración** por un admin logueado (`POST /api/admins`, solo crea rol admin).
+- Middleware protege `/(dashboard)/*` → sin sesión admin redirige a `/login`.
+- `lib/auth/` (password, session, requireAdmin) espejo del cliente. Se eliminan `auth-service.ts`, `tokens.ts`, `api-client.ts` (capa Java) y rutas `auth/refresh`, `auth/verify`, páginas `register`/`callback`.
 
-## Páginas (admin)
+## Estados (real vs mostrado)
 
-- `/login`, `/register` — solo accesible para crear/login de admins (registro idealmente sembrado, no público)
-- `/dashboard` — KPIs (usuarios, reservas, ingresos, pendientes) + gráficos (reservas/día, ingresos, distribución por deporte, últimos eventos)
-- `/espacios` — CRUD de `campus` y `canchas_deportivas` (tabs)
-- `/reservaciones` — tabla filtrable + panel detalle + acciones (cancelar, marcar finalizada → ojo: ver punto 3)
-- `/horarios` — calendario semanal con `cancha_disponibilidad` + bloqueos
-- `/precios` — CRUD de `tarifas` + `tarifas_canchasdep` (asignación masiva)
-- `/reportes` — ingresos por período, comparativas, transacciones
-- `/configuracion` — perfil del admin + gestión de otros admins
+- BD real: `pendiente | pagada | cancelada | expirada`. **No se agregan estados.**
+- Mostrado (derivado en `lib/estado-reserva.ts`): `pagada`+pasado → **Finalizada**; `pagada`+futuro → **Programada**; `pendiente` → **Pendiente de pago**; `cancelada` → **Cancelada**; `expirada` → **Expirada**.
+- `StatusBadge` usa estos 5 (se elimina `reservado/finalizado/cancelado` y aliases legacy de `constants.ts`).
+- Canchas: vocabulario único en español `activo | inactivo | mantenimiento` (se elimina `active/maintenance/inactive` y `disponible/bloqueado`).
+- **Tipos de cancha**: tabla `tipos_cancha` (`valor` sin tildes = lo que se guarda en `canchas_deportivas.tipo_deporte`; `etiqueta` con tildes = display; `activo`). Gestionable desde **Espacios → Tipos de Cancha** (`/api/court-types`): crear, editar etiqueta, activar/desactivar. `valor` es **inmutable** tras crearse (cambiarlo dejaría huérfanas las canchas). El selector de `CourtModal` lista solo los activos; `lib/constants.ts` `TIPOS_CANCHA`/`tipoCanchaLabel` quedan solo como fallback de etiqueta para valores legacy.
+- **Bloqueo de horarios** (`/horarios`): `reservas` con `estado='bloqueada'` (precio 0); el cliente lo ve como slot **Bloqueado**. El bloqueo se registra con `usuarios_id` = **admin logueado** que lo crea (vía `requireAdmin()` en la ruta) — nunca un cliente ni un usuario "de sistema". Cualquier admin puede crear/editar/liberar bloqueos; el cliente no participa. El **motivo** se persiste en `reservas.motivo`. En el calendario, clic en una celda bloqueada abre el modal de detalle/edición (cambiar fecha/hora/motivo, ver quién lo creó, o eliminar) — `PATCH /api/schedules` para editar, `DELETE` para liberar. Calendario y bloqueos en **hora de pared Lima** (`lib/lima-time.ts`, UTC-5), se convierten a instante UTC al guardar — admin y cliente muestran la misma hora. La ventana semanal usa `[lunes 00:00 Lima, lunes siguiente 00:00 Lima)`. No usar `getUTCHours`/`toISOString` crudos para fechas de calendario.
 
-## Endpoints API actuales (en `app/api/`)
+## Datos / clientes Supabase
 
-```
-POST   /api/auth/login         (proxy hacia microservicio Java)
-POST   /api/auth/register
-POST   /api/auth/refresh
-GET    /api/auth/verify
-GET    /api/campus
-POST   /api/campus
-GET    /api/campus/[id]
-PATCH  /api/campus/[id]
-DELETE /api/campus/[id]
-GET    /api/courts             (= canchas_deportivas)
-POST   /api/courts
-GET    /api/courts/[id]
-PATCH  /api/courts/[id]
-DELETE /api/courts/[id]
-GET    /api/reservations
-GET    /api/reservations/[id]
-PATCH  /api/reservations/[id]  (cancelar)
-GET    /api/pricing            (= tarifas + tarifas_canchasdep)
-POST   /api/pricing
-GET    /api/pricing/[id]
-PATCH  /api/pricing/[id]
-DELETE /api/pricing/[id]
-GET    /api/schedules          (= cancha_disponibilidad)
-GET    /api/payments
-GET    /api/payments/[id]
-GET    /api/reports
-GET    /api/notifications
-POST   /api/notifications
-GET    /api/notifications/[id]
-GET    /api/notifications/stream  (SSE)
-```
+- **Todos los services usan `service_role`** (server-only, vía Route Handlers). Usar el cliente anon en services rompe lectura/escritura por RLS — fue la causa de "espacios no guarda" y del error del dashboard.
+
+## Acciones admin
+
+- **Cancelar** reserva `pagada`/`pendiente` sin la regla de 24h del cliente (`PATCH /api/reservations/[id]`). Se quita "Marcar finalizado".
+- CRUD de `campus`, `canchas_deportivas`, `tarifas`/`tarifas_canchasdep`, `cancha_disponibilidad`.
+- Crear/activar/desactivar admins (nunca borrar).
+- Solo **consulta** pagos/vouchers/historial (no emite ni escribe historial — lo llena el trigger).
+
+## Páginas
+
+`/login` · `/dashboard` (KPIs+gráficos) · `/espacios` (campus+canchas) · `/reservaciones` (tabla+filtros+detalle) · `/horarios` (calendario+bloqueos) · `/precios` · `/reportes` · `/configuracion` (perfil + admins).
+
+## Fixes pendientes (esta etapa)
+
+1. **Reservaciones**: anidar `campus` en `cancha` (hoy `campus_nombre`="Unknown"); `hora` = `HH:MM` hora Lima (no ISO crudo); acciones llaman `PATCH` (hoy `PUT`/`DELETE` rotos).
+2. **Estados/vocabulario**: unificar a los reales (ver arriba).
+3. **Auth**: migrar de Java a bcrypt+JWT propio (ver arriba).
+4. Filtros de Reservaciones: Todas · Programadas · Finalizadas · Pendientes · Canceladas · Expiradas.
 
 ## Variables de entorno
 
 ```
-NEXT_PUBLIC_SUPABASE_URL=                # MISMA que el cliente
-NEXT_PUBLIC_SUPABASE_ANON_KEY=           # MISMA que el cliente
-SUPABASE_SERVICE_ROLE_KEY=               # MISMA que el cliente (solo en server)
-NEXT_PUBLIC_AUTH_SERVICE_URL=            # http(s)://host del microservicio Java
-NEXT_PUBLIC_AUTH_SERVICE_BASE_PATH=      # default /api/v1/auth
+NEXT_PUBLIC_SUPABASE_URL=        # misma que cliente
+NEXT_PUBLIC_SUPABASE_ANON_KEY=   # misma
+SUPABASE_SERVICE_ROLE_KEY=       # misma (solo server)
+ADMIN_JWT_SECRET=                # propio del admin (openssl rand -base64 32)
 ```
-
-## Esquema BD (Supabase) — fuente de verdad
-
-Tablas reales: `roles`, `usuarios`, `campus`, `canchas_deportivas`, `cancha_disponibilidad`, `tarifas`, `tarifas_canchasdep`, `reservas`, `pagos`, `notificaciones`, `historial_reservas`.
-
-Diferencias clave respecto al `types/database.ts` original del admin (ya corregido):
-- `usuarios`: `clave_hash` (no `clave`); `rol_id` FK a `roles` (no `rol` string libre); `dni varchar(8) UNIQUE` **nullable**.
-- `roles`: tabla propia (`id`, `nombre` con `cliente|admin`).
-- `reservas.estado` ∈ `pendiente|pagada|cancelada|expirada`; tiene `code` y `expires_at`; constraint `EXCLUDE` anti-solapes.
-- `pagos`: `metodo_pago` ∈ `yape|plin|tarjeta`; `estado` ∈ `pendiente|exitoso|fallido|reembolsado`; campos extra `voucher_url`, `voucher_serie`, `voucher_correlativo`, `comprobante_yape_url`, `titular_nombre`, `titular_dni`, `titular_direccion`, `titular_fecha_nacimiento`; `simulated boolean`.
-- `historial_reservas`: poblado por trigger.
-- Storage: `vouchers` (público), `yape_comprobantes` (privado, firma con `service_role`).
-- RLS: anon solo cataloga; el admin opera vía Route Handlers con `service_role`.
-
-SQL completo en el spec del cliente.
 
 ## Fuera de alcance
 
-- Emisión de vouchers (lo hace el cliente al pagar; el admin solo consulta).
-- Pago real / OSE / pasarela real.
-- Tests automatizados (validación manual).
-
-## Deuda técnica conocida
-
-1. `types/database.ts` desalineado con schema real → **corregido**.
-2. `services/reservations-service.ts` y `payments-service.ts` usaban estados/campos antiguos (`reservado/finalizado/completado`, `receipt_url`) → **corregido a los reales** (`pendiente/pagada/cancelada/expirada`, `voucher_url`, `metodo_pago` ∈ yape/plin/tarjeta, `pagos.estado='exitoso'`).
-3. Tokens en `lib/tokens.ts`: siguen en `localStorage` + cookie, ahora con `Secure; SameSite=Lax`. **HttpOnly real no es posible desde `document.cookie`**; requeriría un Route Handler proxy que reemita las cookies del servicio Java — fuera de alcance ahora porque tocaría el flujo de auth.
-4. RLS de Supabase: verificar que `service_role` solo se use server-side y que anon no acceda a `pagos`/`reservas`/`usuarios`.
+Emisión de vouchers (lo hace el cliente) · pasarela real / OSE · tests automatizados.

@@ -2,25 +2,32 @@ import { NextRequest, NextResponse } from 'next/server'
 import { pricingService } from '@/services/pricing-service'
 
 /**
- * GET /api/pricing - Obtener todas las tarifas
- * POST /api/pricing - Crear nueva tarifa
+ * GET  /api/pricing?court_id=  - Reglas de una cancha (ordenadas por prioridad)
+ * POST /api/pricing            - Crear regla en una cancha (court_id) o
+ *                                inyectar en varias (court_ids[], queda primera)
  */
+
+function ruleInput(body: any) {
+  return {
+    nombre: body.nombre,
+    dias: Array.isArray(body.dias) ? body.dias.map(Number) : null,
+    hora_empieza: body.hora_empieza ?? null,
+    hora_termina: body.hora_termina ?? null,
+    fecha_empieza: body.fecha_empieza ?? null,
+    fecha_termina: body.fecha_termina ?? null,
+    precio: Number(body.precio),
+    prioridad: Number(body.prioridad) || 0,
+  }
+}
 
 export async function GET(request: NextRequest) {
   try {
-    const tarifas = await pricingService.getTarifas()
-
-    return NextResponse.json({
-      success: true,
-      data: tarifas,
-    })
+    const courtId = new URL(request.url).searchParams.get('court_id')
+    const data = courtId ? await pricingService.getCourtPricingRules(parseInt(courtId, 10)) : []
+    return NextResponse.json({ success: true, data })
   } catch (error) {
-    console.error('Error fetching pricing:', error)
     return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Error al obtener tarifas',
-      },
+      { success: false, error: error instanceof Error ? error.message : 'Error al obtener tarifas' },
       { status: 500 }
     )
   }
@@ -29,41 +36,27 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-
-    if (!body.nombre || body.precio === undefined || body.prioridad === undefined) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Nombre, precio y prioridad requeridos',
-        },
-        { status: 400 }
-      )
+    if (body.precio === undefined || body.precio === null || Number.isNaN(Number(body.precio))) {
+      return NextResponse.json({ success: false, error: 'Precio requerido' }, { status: 400 })
     }
 
-    const newTarifa = await pricingService.createTarifa({
-      nombre: body.nombre,
-      hora_empieza: body.hora_empieza,
-      hora_termina: body.hora_termina,
-      fecha_empieza: body.fecha_empieza,
-      fecha_termina: body.fecha_termina,
-      precio: body.precio,
-      prioridad: body.prioridad,
-    })
+    const input = ruleInput(body)
 
-    return NextResponse.json(
-      {
-        success: true,
-        data: newTarifa,
-      },
-      { status: 201 }
-    )
+    // Inyección a varias canchas (vista Por Campus): copia independiente, queda primera
+    if (Array.isArray(body.court_ids) && body.court_ids.length) {
+      const count = await pricingService.injectRuleToCourts(body.court_ids.map(Number), input)
+      return NextResponse.json({ success: true, data: { canchas: count } }, { status: 201 })
+    }
+
+    // Regla en una cancha (vista Por Cancha)
+    if (!body.court_id) {
+      return NextResponse.json({ success: false, error: 'court_id o court_ids requerido' }, { status: 400 })
+    }
+    const data = await pricingService.createCourtPricingRule(Number(body.court_id), input)
+    return NextResponse.json({ success: true, data }, { status: 201 })
   } catch (error) {
-    console.error('Error creating pricing:', error)
     return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Error al crear tarifa',
-      },
+      { success: false, error: error instanceof Error ? error.message : 'Error al crear tarifa' },
       { status: 500 }
     )
   }

@@ -2,27 +2,15 @@
 
 import { useState, useEffect } from 'react'
 import { Card } from '@/components/common/Card'
-import { Button } from '@/components/common/Button'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
-import { PricingTab } from '@/components/precios/PricingTab'
-
-interface PricingRule {
-  id: number
-  court_id?: number
-  campus_id?: number
-  day_of_week?: number
-  start_time?: string
-  end_time?: string
-  base_price: number
-  discount_percentage?: number
-  priority: number
-  active: boolean
-}
+import { PricingByCourt } from '@/components/precios/PricingByCourt'
+import { PricingByCampus } from '@/components/precios/PricingByCampus'
 
 interface Court {
   id: number
   nombre: string
   campus_id: number
+  precio_default?: number | null
 }
 
 interface Campus {
@@ -31,122 +19,90 @@ interface Campus {
 }
 
 export default function PreciosPage() {
-  const [activeTab, setActiveTab] = useState<'court' | 'campus'>('court')
+  const [tab, setTab] = useState<'court' | 'campus'>('court')
   const [courts, setCourts] = useState<Court[]>([])
   const [campuses, setCampuses] = useState<Campus[]>([])
-  const [selectedCourt, setSelectedCourt] = useState<number | null>(null)
   const [selectedCampus, setSelectedCampus] = useState<number | null>(null)
-  const [pricingRules, setPricingRules] = useState<PricingRule[]>([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    fetchCampuses()
-    fetchCourts()
-  }, [])
-
-  const fetchCampuses = async () => {
-    try {
-      const response = await fetch('/api/campus')
-      const result = await response.json()
-      if (result.success) {
-        setCampuses(result.data)
-      }
-    } catch (err) {
-      setError('Error al cargar campus')
-    }
-  }
-
-  const fetchCourts = async () => {
-    try {
-      const response = await fetch('/api/courts')
-      const result = await response.json()
-      if (result.success) {
-        setCourts(result.data)
-      }
-    } catch (err) {
-      setError('Error al cargar canchas')
-    }
-  }
-
-  const fetchPricingRules = async () => {
+  const fetchData = async () => {
     setLoading(true)
+    setError(null)
     try {
-      const params = new URLSearchParams()
-      if (activeTab === 'court' && selectedCourt) {
-        params.append('court_id', selectedCourt.toString())
-      } else if (activeTab === 'campus' && selectedCampus) {
-        params.append('campus_id', selectedCampus.toString())
+      const [courtsRes, campusRes] = await Promise.all([fetch('/api/courts'), fetch('/api/campus')])
+      const courtsJson = await courtsRes.json()
+      const campusJson = await campusRes.json()
+      if (courtsJson.success) setCourts(courtsJson.data || [])
+      if (campusJson.success) {
+        setCampuses(campusJson.data || [])
+        if (campusJson.data?.length && selectedCampus === null) setSelectedCampus(campusJson.data[0].id)
       }
-
-      const response = await fetch(`/api/pricing?${params}`)
-      const result = await response.json()
-      if (result.success) {
-        setPricingRules(result.data || [])
-      }
-    } catch (err) {
-      setError('Error al cargar tarifas')
+    } catch {
+      setError('Error al cargar datos')
     } finally {
       setLoading(false)
     }
   }
 
   useEffect(() => {
-    if ((activeTab === 'court' && selectedCourt) || (activeTab === 'campus' && selectedCampus)) {
-      fetchPricingRules()
-    }
-  }, [activeTab, selectedCourt, selectedCampus])
+    fetchData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const filteredCourts = courts.filter((c) => c.campus_id === selectedCampus)
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div>
         <h1 className="text-3xl font-bold text-gray-900">Gestión de Precios</h1>
+        <p className="text-gray-600 mt-1">Configura precios y reglas por cancha o campus</p>
       </div>
 
       <Card>
         <div className="space-y-6">
-          {/* Tab Navigation */}
-          <div className="flex gap-4 border-b border-gray-200">
+          {/* Tabs */}
+          <div className="flex gap-2">
             <button
-              onClick={() => setActiveTab('court')}
-              className={`px-4 py-2 font-medium border-b-2 transition-colors ${
-                activeTab === 'court'
-                  ? 'border-green-600 text-green-600'
-                  : 'border-transparent text-gray-600 hover:text-gray-900'
+              onClick={() => setTab('court')}
+              className={`px-4 py-2 rounded-lg font-medium text-sm ${
+                tab === 'court' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
               Por Cancha
             </button>
             <button
-              onClick={() => setActiveTab('campus')}
-              className={`px-4 py-2 font-medium border-b-2 transition-colors ${
-                activeTab === 'campus'
-                  ? 'border-green-600 text-green-600'
-                  : 'border-transparent text-gray-600 hover:text-gray-900'
+              onClick={() => setTab('campus')}
+              className={`px-4 py-2 rounded-lg font-medium text-sm ${
+                tab === 'campus' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
               Por Campus
             </button>
           </div>
 
+          {/* Selector de campus (compartido) */}
+          <div className="max-w-xs">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Campus</label>
+            <select
+              value={selectedCampus ?? ''}
+              onChange={(e) => setSelectedCampus(parseInt(e.target.value))}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2"
+            >
+              {campuses.map((c) => (
+                <option key={c.id} value={c.id}>{c.nombre}</option>
+              ))}
+            </select>
+          </div>
+
           {error && <div className="p-4 bg-red-50 text-red-700 rounded-lg">{error}</div>}
 
           {loading ? (
-            <div className="flex justify-center py-12">
-              <LoadingSpinner />
-            </div>
+            <div className="flex justify-center py-12"><LoadingSpinner /></div>
+          ) : tab === 'court' ? (
+            <PricingByCourt courts={filteredCourts} onRefresh={fetchData} />
           ) : (
-            <PricingTab
-              tab={activeTab}
-              courts={courts}
-              campuses={campuses}
-              selectedCourt={selectedCourt}
-              selectedCampus={selectedCampus}
-              pricingRules={pricingRules}
-              onCourtSelect={setSelectedCourt}
-              onCampusSelect={setSelectedCampus}
-              onRulesChange={fetchPricingRules}
-            />
+            <PricingByCampus courts={filteredCourts} onRefresh={fetchData} />
           )}
         </div>
       </Card>

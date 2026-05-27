@@ -14,6 +14,7 @@ interface ReportData {
   totalReservations: number
   variationPercentage: number
   byDeport: Array<{ deport: string; amount: number }>
+  byCourt: Array<{ cancha: string; amount: number }>
   dailyData: Array<{ date: string; revenue: number }>
 }
 
@@ -51,6 +52,7 @@ export default function ReportesPage() {
           totalReservations: result.data.totalReservations || 0,
           variationPercentage: result.data.variationPercentage || 0,
           byDeport: result.data.byDeport || [],
+          byCourt: result.data.byCourt || [],
           dailyData: result.data.dailyData || [],
         })
       } else {
@@ -94,13 +96,13 @@ export default function ReportesPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <RevenueCard
               label="Ingresos Totales"
-              value={`$${reportData.totalRevenue.toFixed(2)}`}
+              value={`S/ ${reportData.totalRevenue.toFixed(2)}`}
               icon="DollarSign"
               trend={reportData.variationPercentage}
             />
             <RevenueCard
               label="Promedio por Reserva"
-              value={`$${reportData.averageReservation.toFixed(2)}`}
+              value={`S/ ${reportData.averageReservation.toFixed(2)}`}
               icon="TrendingUp"
             />
             <RevenueCard
@@ -127,6 +129,30 @@ export default function ReportesPage() {
               <DistributionChart data={reportData.byDeport} />
             </Card>
           </div>
+
+          <Card>
+            <h2 className="text-lg font-bold text-gray-900 mb-4">Ingresos por Cancha</h2>
+            {reportData.byCourt.length === 0 ? (
+              <p className="text-gray-500 text-sm">Sin datos en el período.</p>
+            ) : (
+              <div className="space-y-2">
+                {reportData.byCourt.map((c) => {
+                  const max = reportData.byCourt[0]?.amount || 1
+                  return (
+                    <div key={c.cancha} className="flex items-center gap-3">
+                      <span className="w-40 shrink-0 text-sm text-gray-700 truncate">{c.cancha}</span>
+                      <div className="flex-1 bg-gray-100 rounded-full h-3 overflow-hidden">
+                        <div className="bg-green-500 h-3 rounded-full" style={{ width: `${(c.amount / max) * 100}%` }} />
+                      </div>
+                      <span className="w-24 shrink-0 text-right text-sm font-semibold text-gray-900">
+                        S/ {c.amount.toFixed(2)}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </Card>
         </>
       ) : null}
     </div>

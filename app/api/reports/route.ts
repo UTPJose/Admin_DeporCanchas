@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
             { status: 400 }
           )
         }
-        response = await reportsService.getRevenueByPeriod(from, to)
+        response = await reportsService.getRevenueReport(from, to)
         break
       }
 

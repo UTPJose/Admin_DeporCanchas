@@ -39,7 +39,16 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const parsedId = parseInt(id, 10)
     const body = await request.json()
 
-    const updatedTarifa = await pricingService.updateTarifa(parsedId, body)
+    const updatedTarifa = await pricingService.updatePricingRule(parsedId, {
+      nombre: body.nombre,
+      dias: Array.isArray(body.dias) ? body.dias.map(Number) : null,
+      hora_empieza: body.hora_empieza ?? null,
+      hora_termina: body.hora_termina ?? null,
+      fecha_empieza: body.fecha_empieza ?? null,
+      fecha_termina: body.fecha_termina ?? null,
+      precio: Number(body.precio),
+      prioridad: Number(body.prioridad),
+    })
 
     return NextResponse.json({
       success: true,
@@ -62,7 +71,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     const { id } = await params
     const parsedId = parseInt(id, 10)
 
-    await pricingService.deleteTarifa(parsedId)
+    await pricingService.deletePricingRule(parsedId)
 
     return NextResponse.json({
       success: true,

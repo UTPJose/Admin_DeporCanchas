@@ -125,11 +125,20 @@ export const schedulesService = {
     reason?: string,
     allDay?: boolean
   ): Promise<any> {
-    // Para bloqueos específicos, validar que no se crucen con reservas o bloqueos existentes
+    // Para bloqueos específicos, validar que no se crucen con reservas o bloqueos existentes.
+    // El mensaje distingue el caso "reserva en proceso de pago" para no confundir al admin.
     if (!allDay) {
-      const isAvailable = await this.isTimeSlotAvailable(courtId, startDate, endDate)
-      if (!isAvailable) {
-        throw new Error('El horario seleccionado ya se encuentra ocupado o reservado.')
+      const conflict = await this.findConflict(courtId, startDate, endDate)
+      if (conflict === 'pendiente') {
+        throw new Error(
+          'Ese horario tiene una reserva en proceso de pago. Se libera en ≤10 min si no se concreta; vuelve a intentar más tarde.'
+        )
+      }
+      if (conflict === 'pagada') {
+        throw new Error('Ese horario ya tiene una reserva pagada y no se puede bloquear.')
+      }
+      if (conflict === 'bloqueada') {
+        throw new Error('Ese horario ya está bloqueado.')
       }
     }
 
@@ -304,6 +313,35 @@ export const schedulesService = {
     const { error } = await supabaseAdmin.from('reservas').delete().eq('id', scheduleId)
 
     if (error) throw new Error(`Error al desbloquear horario: ${error.message}`)
+  },
+
+  /**
+   * Devuelve el estado del primer solape ('pendiente' | 'pagada' | 'bloqueada')
+   * o null si el horario está libre. Prioriza 'pagada' > 'pendiente' > 'bloqueada'
+   * para dar el mensaje más relevante.
+   */
+  async findConflict(
+    courtId: number,
+    startDate: string,
+    endDate: string
+  ): Promise<'pendiente' | 'pagada' | 'bloqueada' | null> {
+    const cleanStart = sanitizeDatetime(startDate)
+    const cleanEnd = sanitizeDatetime(endDate)
+
+    const { data, error } = await supabaseAdmin
+      .from('reservas')
+      .select('estado')
+      .eq('canchasdep_id', courtId)
+      .in('estado', ['pendiente', 'pagada', 'bloqueada'])
+      .lt('fecha_empieza', cleanEnd)
+      .gt('fecha_termina', cleanStart)
+
+    if (error) throw new Error(`Error al verificar disponibilidad: ${error.message}`)
+    const estados = new Set((data || []).map((r) => r.estado))
+    if (estados.has('pagada')) return 'pagada'
+    if (estados.has('pendiente')) return 'pendiente'
+    if (estados.has('bloqueada')) return 'bloqueada'
+    return null
   },
 
   /**

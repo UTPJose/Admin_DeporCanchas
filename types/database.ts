@@ -39,6 +39,7 @@ export interface CanchaDep {
   tipo_deporte: TipoDeporte
   cantidad_jugadores: number
   estado: 'disponible' | 'bloqueado' | 'mantenimiento'
+  imagen_url?: string | null
   created_at?: string
   updated_at?: string
 }

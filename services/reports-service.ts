@@ -1,11 +1,88 @@
 import { supabaseAdmin as supabase } from '@/lib/supabase'
 import { DashboardStats } from '@/types/database'
+import { limaYMD } from '@/lib/lima-time'
 
 /**
  * Reports Service - Análisis y estadísticas
  */
 
+export interface RevenueReport {
+  totalRevenue: number
+  totalReservations: number
+  averageReservation: number
+  variationPercentage: number
+  byDeport: { deport: string; amount: number }[]
+  byCourt: { cancha: string; amount: number }[]
+  dailyData: { date: string; revenue: number }[]
+}
+
 export const reportsService = {
+  /**
+   * Reporte de ingresos completo para la página de Reportes.
+   * Reservas `pagada` por `fecha_empieza` dentro del rango. Compara con el
+   * período inmediatamente anterior de igual duración para la variación %.
+   */
+  async getRevenueReport(from: string, to: string): Promise<RevenueReport> {
+    const { data, error } = await supabase
+      .from('reservas')
+      .select('fecha_empieza, precio_total, canchasdep:canchasdep_id(nombre, tipo_deporte)')
+      .eq('estado', 'pagada')
+      .gte('fecha_empieza', from)
+      .lte('fecha_empieza', to)
+    if (error) throw new Error(`Error al obtener ingresos: ${error.message}`)
+
+    const rows = (data || []) as any[]
+    const totalRevenue = rows.reduce((s, r) => s + (r.precio_total || 0), 0)
+    const totalReservations = rows.length
+    const averageReservation = totalReservations ? totalRevenue / totalReservations : 0
+
+    // Etiquetas de deporte (valor → etiqueta con tildes)
+    const { data: tipos } = await supabase.from('tipos_cancha').select('valor, etiqueta')
+    const label = (valor: string) =>
+      (tipos || []).find((t: any) => t.valor === valor)?.etiqueta || valor || 'Desconocido'
+
+    const byDeportMap: Record<string, number> = {}
+    const byCourtMap: Record<string, number> = {}
+    const dailyMap: Record<string, number> = {}
+    for (const r of rows) {
+      const dep = label(r.canchasdep?.tipo_deporte)
+      byDeportMap[dep] = (byDeportMap[dep] || 0) + (r.precio_total || 0)
+      const cancha = r.canchasdep?.nombre || 'Desconocida'
+      byCourtMap[cancha] = (byCourtMap[cancha] || 0) + (r.precio_total || 0)
+      const dia = limaYMD(r.fecha_empieza)
+      dailyMap[dia] = (dailyMap[dia] || 0) + (r.precio_total || 0)
+    }
+
+    // Período anterior de igual duración
+    const fromMs = new Date(from).getTime()
+    const toMs = new Date(to).getTime()
+    const dur = Math.max(0, toMs - fromMs)
+    const prevFrom = new Date(fromMs - dur).toISOString()
+    const prevTo = new Date(fromMs).toISOString()
+    const { data: prev } = await supabase
+      .from('reservas')
+      .select('precio_total')
+      .eq('estado', 'pagada')
+      .gte('fecha_empieza', prevFrom)
+      .lt('fecha_empieza', prevTo)
+    const prevRevenue = (prev || []).reduce((s, r) => s + (r.precio_total || 0), 0)
+    const variationPercentage = prevRevenue > 0 ? ((totalRevenue - prevRevenue) / prevRevenue) * 100 : 0
+
+    return {
+      totalRevenue,
+      totalReservations,
+      averageReservation,
+      variationPercentage,
+      byDeport: Object.entries(byDeportMap).map(([deport, amount]) => ({ deport, amount })),
+      byCourt: Object.entries(byCourtMap)
+        .map(([cancha, amount]) => ({ cancha, amount }))
+        .sort((a, b) => b.amount - a.amount),
+      dailyData: Object.entries(dailyMap)
+        .map(([date, revenue]) => ({ date, revenue }))
+        .sort((a, b) => a.date.localeCompare(b.date)),
+    }
+  },
+
   /**
    * Obtener estadísticas del dashboard
    */

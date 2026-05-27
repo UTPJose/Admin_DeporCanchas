@@ -25,12 +25,17 @@ const statusLabels: Record<CourtEstado, string> = {
   inactivo: 'Inactiva',
 }
 
-export function CourtCard({ name, sport, campus, capacity, status, onEdit, onDelete }: CourtCardProps) {
+export function CourtCard({ name, sport, campus, capacity, status, image, onEdit, onDelete }: CourtCardProps) {
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
-      <div className="h-40 bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-6xl">
-        🏐
-      </div>
+      {image ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={image} alt={name} className="h-40 w-full object-cover" />
+      ) : (
+        <div className="h-40 bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-6xl">
+          🏐
+        </div>
+      )}
       <div className="p-4">
         <h3 className="text-lg font-semibold text-gray-900">{name}</h3>
         <p className="text-sm text-gray-600 mt-1">{campus}</p>

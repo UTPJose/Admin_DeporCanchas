@@ -22,6 +22,7 @@ interface Court {
   campus_id: number
   cantidad_jugadores: number
   estado: 'activo' | 'mantenimiento' | 'inactivo'
+  imagen_url?: string | null
 }
 
 interface Campus {
@@ -238,6 +239,7 @@ export default function EspaciosPage() {
                   campus={campuses.find((c) => c.id === court.campus_id)?.nombre || 'Unknown'}
                   capacity={court.cantidad_jugadores}
                   status={court.estado}
+                  image={court.imagen_url ?? undefined}
                   onEdit={() => handleEditCourt(court)}
                   onDelete={() => handleDeleteCourt(court.id)}
                 />
@@ -301,6 +303,7 @@ export default function EspaciosPage() {
                 tipo_deporte: selectedCourt.tipo_deporte,
                 cantidad_jugadores: selectedCourt.cantidad_jugadores,
                 estado: selectedCourt.estado,
+                imagen_url: selectedCourt.imagen_url ?? null,
                 id: selectedCourt.id,
               }
             : undefined

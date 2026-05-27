@@ -23,6 +23,7 @@ export interface CourtFormData {
   tipo_deporte: string
   cantidad_jugadores: number
   estado: 'activo' | 'mantenimiento' | 'inactivo'
+  imagen_url?: string | null
 }
 
 function emptyForm(campuses: Array<{ id: number }>, tipos: TipoOption[]): CourtFormData {
@@ -32,6 +33,7 @@ function emptyForm(campuses: Array<{ id: number }>, tipos: TipoOption[]): CourtF
     tipo_deporte: tipos[0]?.valor ?? '',
     cantidad_jugadores: 10,
     estado: 'activo',
+    imagen_url: null,
   }
 }
 
@@ -46,6 +48,29 @@ export function CourtModal({
 }: CourtModalProps) {
   const [formData, setFormData] = useState<CourtFormData>(initialData ?? emptyForm(campuses, tipos))
   const [error, setError] = useState<string | null>(null)
+  const [uploading, setUploading] = useState(false)
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    setError(null)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      const res = await fetch('/api/courts/image', { method: 'POST', body: fd })
+      const json = await res.json()
+      if (!json.success) {
+        setError(json.error || 'Error al subir imagen')
+        return
+      }
+      setFormData((prev) => ({ ...prev, imagen_url: json.url }))
+    } catch {
+      setError('Error al subir imagen')
+    } finally {
+      setUploading(false)
+    }
+  }
 
   // Re-sincronizar el formulario cada vez que se abre o cambia la cancha a editar
   useEffect(() => {
@@ -150,6 +175,36 @@ export function CourtModal({
             </select>
           </div>
 
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Imagen</label>
+            {formData.imagen_url ? (
+              <div className="flex items-center gap-3">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={formData.imagen_url}
+                  alt="Cancha"
+                  className="w-20 h-20 object-cover rounded-lg border border-gray-200"
+                />
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, imagen_url: null })}
+                  className="text-sm text-red-600 hover:underline"
+                >
+                  Quitar
+                </button>
+              </div>
+            ) : (
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                disabled={uploading}
+                className="w-full text-sm text-gray-600 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-green-600 file:text-white hover:file:bg-green-700 disabled:opacity-50"
+              />
+            )}
+            {uploading && <p className="text-xs text-gray-500 mt-1">Subiendo imagen...</p>}
+          </div>
+
           {error && <p className="text-red-600 text-sm">{error}</p>}
 
           <div className="flex gap-3 pt-4">
@@ -162,7 +217,7 @@ export function CourtModal({
             </button>
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || uploading}
               className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors disabled:opacity-50"
             >
               {loading ? 'Guardando...' : 'Guardar'}

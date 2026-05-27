@@ -55,6 +55,7 @@ export async function POST(request: NextRequest) {
       tipo_deporte: body.tipo_deporte,
       cantidad_jugadores: body.cantidad_jugadores,
       estado: body.estado || 'activo',
+      imagen_url: body.imagen_url ?? null,
     })
 
     return NextResponse.json(

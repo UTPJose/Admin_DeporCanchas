@@ -182,9 +182,13 @@ export const reportsService = {
 
     if (error) throw new Error(`Error al obtener reservas por deporte: ${error.message}`)
 
+    const { data: tipos } = await supabase.from('tipos_cancha').select('valor, etiqueta')
+    const label = (valor: string) =>
+      (tipos || []).find((t: any) => t.valor === valor)?.etiqueta || valor || 'Desconocido'
+
     const grouped: { [key: string]: number } = {}
     ;(data || []).forEach((r: any) => {
-      const deporte = r.canchasdep?.tipo_deporte || 'Desconocido'
+      const deporte = label(r.canchasdep?.tipo_deporte)
       grouped[deporte] = (grouped[deporte] || 0) + 1
     })
 

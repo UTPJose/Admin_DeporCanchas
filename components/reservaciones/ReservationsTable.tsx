@@ -1,8 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { StatusBadge } from './StatusBadge'
 import type { EstadoMostrado } from '@/lib/estado-reserva'
+
+const PAGE_SIZE = 10
 
 export interface Reservation {
   id: number
@@ -26,8 +28,16 @@ interface ReservationsTableProps {
 export function ReservationsTable({ data, loading, onCancel }: ReservationsTableProps) {
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [isDetailOpen, setIsDetailOpen] = useState(false)
+  const [page, setPage] = useState(1)
+
+  // Reiniciar a la primera página cuando cambian los datos (filtros)
+  useEffect(() => setPage(1), [data])
 
   const selected = data.find((r) => r.id === selectedId)
+
+  const totalPages = Math.max(1, Math.ceil(data.length / PAGE_SIZE))
+  const currentPage = Math.min(page, totalPages)
+  const pageData = data.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
 
   if (loading) {
     return (
@@ -67,7 +77,7 @@ export function ReservationsTable({ data, loading, onCancel }: ReservationsTable
                   </td>
                 </tr>
               ) : (
-                data.map((res) => (
+                pageData.map((res) => (
                   <tr
                     key={res.id}
                     onClick={() => handleViewDetail(res.id)}
@@ -97,6 +107,32 @@ export function ReservationsTable({ data, loading, onCancel }: ReservationsTable
             </tbody>
           </table>
         </div>
+
+        {data.length > 0 && (
+          <div className="flex items-center justify-between mt-3 text-sm text-gray-600">
+            <span>
+              Mostrando {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, data.length)} de{' '}
+              {data.length}
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage <= 1}
+                className="px-3 py-1.5 border border-gray-300 rounded-lg disabled:opacity-40 hover:bg-gray-50"
+              >
+                Anterior
+              </button>
+              <span className="px-2">Página {currentPage} de {totalPages}</span>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage >= totalPages}
+                className="px-3 py-1.5 border border-gray-300 rounded-lg disabled:opacity-40 hover:bg-gray-50"
+              >
+                Siguiente
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {isDetailOpen && selected && (

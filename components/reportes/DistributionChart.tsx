@@ -26,7 +26,7 @@ export function DistributionChart({ data }: DistributionChartProps) {
     <ResponsiveContainer width="100%" height={300}>
       <PieChart>
         <Tooltip
-          formatter={(value: any) => `$${value.toFixed(2)}`}
+          formatter={(value: any) => `S/ ${Number(value).toFixed(2)}`}
           contentStyle={{
             backgroundColor: '#fff',
             border: '1px solid #e5e7eb',
@@ -39,7 +39,7 @@ export function DistributionChart({ data }: DistributionChartProps) {
           cx="50%"
           cy="50%"
           labelLine={false}
-          label={({ name, value }) => `${name}: $${value.toFixed(0)}`}
+          label={({ percent }) => (percent && percent > 0.04 ? `${(percent * 100).toFixed(0)}%` : '')}
           outerRadius={80}
           fill="#8884d8"
           dataKey="value"

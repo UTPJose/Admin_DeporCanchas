@@ -75,13 +75,21 @@ export default function DashboardPage() {
           pendientes: statsData.data?.total_pendientes || 0,
         })
 
-        setSports(sportsData.data || [])
+        // by-deport devuelve { deporte, cantidad } → { name, value }
+        setSports(
+          (sportsData.data || []).map((item: any) => ({
+            name: item.deporte ?? item.name ?? 'Otro',
+            value: item.cantidad ?? item.value ?? 0,
+          }))
+        )
 
-        if (revenueData.data) {
+        // type=revenue ahora devuelve un objeto; el chart usa dailyData [{date, revenue}]
+        const daily = revenueData.data?.dailyData ?? []
+        if (Array.isArray(daily)) {
           setRevenue(
-            revenueData.data.map((item: any) => ({
-              date: item.periodo || item.date || item.fecha || '',
-              ingresos: item.monto ?? item.ingresos ?? 0,
+            daily.map((item: any) => ({
+              date: item.date ?? item.periodo ?? '',
+              ingresos: item.revenue ?? item.monto ?? 0,
             }))
           )
         }

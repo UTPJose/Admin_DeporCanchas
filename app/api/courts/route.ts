@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { courtsService } from '@/services/courts-service'
+import { schedulesService } from '@/services/schedules-service'
 
 /**
  * GET /api/courts - Obtener todas las canchas con filtros opcionales
@@ -49,14 +50,28 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const newCourt = await courtsService.createCourt({
+    const courtPayload: Record<string, unknown> = {
       campus_id: body.campus_id,
       nombre: body.nombre,
       tipo_deporte: body.tipo_deporte,
       cantidad_jugadores: body.cantidad_jugadores,
       estado: body.estado || 'activo',
       imagen_url: body.imagen_url ?? null,
-    })
+    }
+    if (body.precio_default !== undefined && body.precio_default !== null && body.precio_default !== '') {
+      courtPayload.precio_default = Number(body.precio_default)
+    }
+    const newCourt = await courtsService.createCourt(courtPayload as any)
+
+    // Disponibilidad inicial (7 días). Toma hora_abre/hora_cierra del body o usa 08-22.
+    // Sin esto la cancha sale "bloqueada" en todos los slots para el cliente.
+    const horaAbre = body.hora_abre || '08:00:00'
+    const horaCierra = body.hora_cierra || '22:00:00'
+    try {
+      await schedulesService.replaceAvailability(newCourt.id, horaAbre, horaCierra)
+    } catch (e) {
+      console.error('createCourt: fallo al crear disponibilidad', e)
+    }
 
     return NextResponse.json(
       {

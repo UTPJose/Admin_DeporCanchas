@@ -24,6 +24,9 @@ export interface CourtFormData {
   cantidad_jugadores: number
   estado: 'activo' | 'mantenimiento' | 'inactivo'
   imagen_url?: string | null
+  hora_abre?: string // 'HH:MM' (UI); el server normaliza a HH:MM:SS
+  hora_cierra?: string
+  precio_default?: number | null
 }
 
 function emptyForm(campuses: Array<{ id: number }>, tipos: TipoOption[]): CourtFormData {
@@ -34,6 +37,9 @@ function emptyForm(campuses: Array<{ id: number }>, tipos: TipoOption[]): CourtF
     cantidad_jugadores: 10,
     estado: 'activo',
     imagen_url: null,
+    hora_abre: '08:00',
+    hora_cierra: '22:00',
+    precio_default: null,
   }
 }
 
@@ -76,7 +82,29 @@ export function CourtModal({
   useEffect(() => {
     if (!isOpen) return
     setError(null)
-    setFormData(initialData ?? emptyForm(campuses, tipos))
+    const base = initialData ?? emptyForm(campuses, tipos)
+    setFormData({
+      ...base,
+      hora_abre: base.hora_abre ?? '08:00',
+      hora_cierra: base.hora_cierra ?? '22:00',
+    })
+    // En modo edición, traer el horario real de la cancha (usa la 1ra fila de
+    // disponibilidad; asumimos que las 7 filas tienen el mismo rango).
+    if (isOpen && initialData?.id) {
+      fetch(`/api/schedules?action=availability&court_id=${initialData.id}`)
+        .then((r) => r.json())
+        .then((j) => {
+          const first = j?.data?.[0]
+          if (first?.hora_abre && first?.hora_cierra) {
+            setFormData((prev) => ({
+              ...prev,
+              hora_abre: String(first.hora_abre).slice(0, 5),
+              hora_cierra: String(first.hora_cierra).slice(0, 5),
+            }))
+          }
+        })
+        .catch(() => {})
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, initialData?.id])
 
@@ -160,6 +188,57 @@ export function CourtModal({
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600"
               min="1"
             />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Hora abre</label>
+              <input
+                type="time"
+                value={formData.hora_abre ?? '08:00'}
+                onChange={(e) => setFormData({ ...formData, hora_abre: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Hora cierra</label>
+              <input
+                type="time"
+                value={formData.hora_cierra ?? '22:00'}
+                onChange={(e) => setFormData({ ...formData, hora_cierra: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600"
+                required
+              />
+            </div>
+          </div>
+          <p className="-mt-2 text-xs text-gray-500">
+            Se aplica a los 7 días de la semana.
+          </p>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Precio default (S/ por hora)</label>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={
+                formData.precio_default === null || formData.precio_default === undefined || Number.isNaN(formData.precio_default)
+                  ? ''
+                  : formData.precio_default
+              }
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  precio_default: e.target.value === '' ? null : parseFloat(e.target.value),
+                })
+              }
+              placeholder="100.00"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Se usa cuando ninguna regla de Precios aplica. Editable luego en Precios.
+            </p>
           </div>
 
           <div>

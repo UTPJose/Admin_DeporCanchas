@@ -23,6 +23,7 @@ interface Court {
   cantidad_jugadores: number
   estado: 'activo' | 'mantenimiento' | 'inactivo'
   imagen_url?: string | null
+  precio_default?: number | null
 }
 
 interface Campus {
@@ -304,6 +305,7 @@ export default function EspaciosPage() {
                 cantidad_jugadores: selectedCourt.cantidad_jugadores,
                 estado: selectedCourt.estado,
                 imagen_url: selectedCourt.imagen_url ?? null,
+                precio_default: selectedCourt.precio_default ?? null,
                 id: selectedCourt.id,
               }
             : undefined

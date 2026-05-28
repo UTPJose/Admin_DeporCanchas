@@ -67,6 +67,28 @@ export const schedulesService = {
   },
 
   /**
+   * Reemplaza la disponibilidad completa de la cancha por una franja única
+   * aplicada a los 7 días (0=Dom..6=Sáb). Útil para el modal de cancha.
+   */
+  async replaceAvailability(courtId: number, horaAbre: string, horaCierra: string): Promise<void> {
+    const cleanAbre = horaAbre.length === 5 ? `${horaAbre}:00` : horaAbre
+    const cleanCierra = horaCierra.length === 5 ? `${horaCierra}:00` : horaCierra
+    const { error: delErr } = await supabaseAdmin
+      .from('cancha_disponibilidad')
+      .delete()
+      .eq('canchasdep_id', courtId)
+    if (delErr) throw new Error(`Error al limpiar disponibilidad: ${delErr.message}`)
+    const rows = [0, 1, 2, 3, 4, 5, 6].map((d) => ({
+      canchasdep_id: courtId,
+      dias_de_la_semana: d,
+      hora_abre: cleanAbre,
+      hora_cierra: cleanCierra,
+    }))
+    const { error: insErr } = await supabaseAdmin.from('cancha_disponibilidad').insert(rows)
+    if (insErr) throw new Error(`Error al crear disponibilidad: ${insErr.message}`)
+  },
+
+  /**
    * Eliminar disponibilidad
    */
   async deleteAvailability(id: number): Promise<void> {

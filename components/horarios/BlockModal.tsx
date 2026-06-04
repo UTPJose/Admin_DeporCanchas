@@ -46,6 +46,21 @@ export function BlockModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
+
+    // Fail-fast: si falta la cancha o la fecha, el server devolvía un 400 genérico.
+    if (!courtId) {
+      setError('No hay cancha seleccionada. Vuelve al calendario y elige una.')
+      return
+    }
+    if (!date) {
+      setError('Falta la fecha del bloqueo.')
+      return
+    }
+    if (!allDay && (!startTime || !endTime)) {
+      setError('Falta hora de inicio o de fin.')
+      return
+    }
+
     setLoading(true)
 
     try {

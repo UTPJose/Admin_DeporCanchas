@@ -10,7 +10,13 @@ export type AdminUser = {
   dni: string | null
   roles_id: number
   rol_nombre: string
+  /** true si es el super-admin (único que puede crear/modificar otros admins). */
+  isSuper: boolean
 }
+
+/** Email del super-admin. Se lee del env; cae al admin sembrado por defecto. */
+export const SUPER_ADMIN_EMAIL =
+  (process.env.SUPER_ADMIN_EMAIL ?? 'admin@deporcanchas.com').toLowerCase()
 
 export class UnauthorizedError extends Error {
   constructor() {
@@ -48,6 +54,7 @@ export async function getCurrentAdmin(): Promise<AdminUser | null> {
     dni: data.dni,
     roles_id: data.roles_id,
     rol_nombre,
+    isSuper: (data.email || '').toLowerCase() === SUPER_ADMIN_EMAIL,
   }
 }
 
@@ -57,6 +64,27 @@ export async function requireAdmin(): Promise<AdminUser> {
   return admin
 }
 
+export class ForbiddenError extends Error {
+  constructor() {
+    super('Forbidden')
+    this.name = 'ForbiddenError'
+  }
+}
+
+/** Solo el super-admin pasa. Lanza ForbiddenError si es admin "regular". */
+export async function requireSuperAdmin(): Promise<AdminUser> {
+  const admin = await requireAdmin()
+  if (!admin.isSuper) throw new ForbiddenError()
+  return admin
+}
+
 export function unauthorizedResponse(): Response {
   return Response.json({ success: false, error: 'unauthorized' }, { status: 401 })
+}
+
+export function forbiddenResponse(): Response {
+  return Response.json(
+    { success: false, error: 'Solo el super-administrador puede realizar esta acción.' },
+    { status: 403 }
+  )
 }

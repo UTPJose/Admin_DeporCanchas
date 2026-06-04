@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 interface CampusModalProps {
   isOpen: boolean
@@ -17,12 +17,17 @@ export interface CampusFormData {
 
 export function CampusModal({ isOpen, onClose, onSubmit, initialData, loading }: CampusModalProps) {
   const [formData, setFormData] = useState<CampusFormData>(
-    initialData || {
-      nombre: '',
-      ubicacion: '',
-    }
+    initialData || { nombre: '', ubicacion: '' }
   )
   const [error, setError] = useState<string | null>(null)
+
+  // Re-sincronizar el formulario cada vez que se abre o cambia el campus a editar
+  useEffect(() => {
+    if (!isOpen) return
+    setError(null)
+    setFormData(initialData ?? { nombre: '', ubicacion: '' })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, initialData?.id])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

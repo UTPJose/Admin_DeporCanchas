@@ -11,7 +11,7 @@ interface UserProfile {
 }
 
 export function ProfileTab() {
-  const { user } = useAuth()
+  const { user, refresh } = useAuth()
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [nombre, setNombre] = useState('')
   const [email, setEmail] = useState('')
@@ -56,6 +56,9 @@ export function ProfileTab() {
       }
 
       setSuccess('Perfil actualizado correctamente')
+      // Refrescar contexto de auth para que el navbar (y otras pantallas)
+      // muestren el nuevo nombre/email sin recargar la página.
+      await refresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido')
     } finally {
@@ -73,8 +76,8 @@ export function ProfileTab() {
       return
     }
 
-    if (newPassword.length < 6) {
-      setError('La contraseña debe tener al menos 6 caracteres')
+    if (newPassword.length < 8) {
+      setError('La contraseña debe tener al menos 8 caracteres')
       return
     }
 

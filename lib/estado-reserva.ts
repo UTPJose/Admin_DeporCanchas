@@ -28,7 +28,9 @@ export const ESTADO_MOSTRADO_LABEL: Record<EstadoMostrado, string> = {
   finalizada: 'Finalizada',
   pendiente: 'Pendiente de pago',
   cancelada: 'Cancelada',
-  expirada: 'Expirada',
+  // "Expirada" confundía: la gente entendía "fecha pasada". Es el hold de pago
+  // de 10 min que venció sin completarse → la reserva nunca llegó a pagarse.
+  expirada: 'No completada',
 }
 
 /** Filtros del listado de reservaciones del admin. */
@@ -40,7 +42,7 @@ export const FILTRO_LABEL: Record<FiltroReserva, string> = {
   finalizadas: 'Finalizadas',
   pendientes: 'Pendientes',
   canceladas: 'Canceladas',
-  expiradas: 'Expiradas',
+  expiradas: 'No completadas',
 }
 
 /** ¿La reserva (estado real + fecha) cae dentro del filtro elegido? */

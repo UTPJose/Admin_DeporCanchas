@@ -12,6 +12,20 @@ export async function GET(request: NextRequest) {
     const userId = searchParams.get('user_id')
     const type = searchParams.get('type') || 'all'
     const limit = parseInt(searchParams.get('limit') || '50', 10)
+    const audience = searchParams.get('audience') // 'admin' → notificaciones del panel
+
+    // Notificaciones del panel admin (reservas pagadas / canceladas del cliente)
+    if (audience === 'admin') {
+      if (type === 'count') {
+        const unread_count = await notificationsService.getAdminUnreadCount()
+        return NextResponse.json({ success: true, data: { unread_count } })
+      }
+      const page = parseInt(searchParams.get('page') || '1', 10)
+      const perPage = parseInt(searchParams.get('per_page') || '20', 10)
+      const onlyUnread = searchParams.get('unread') === 'true'
+      const res = await notificationsService.getAdminNotifications({ page, perPage, onlyUnread })
+      return NextResponse.json({ success: true, data: res })
+    }
 
     // Sin user_id → notificaciones recientes globales (dashboard admin)
     if (!userId) {

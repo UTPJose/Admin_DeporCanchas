@@ -79,11 +79,16 @@ export async function POST(request: NextRequest) {
         throw e
       }
 
-      if (!body.court_id || !body.start_date || !body.end_date) {
+      const faltan = (['court_id', 'start_date', 'end_date'] as const).filter((k) => !body[k])
+      if (faltan.length) {
+        // Loguea el body recibido para diagnosticar problemas raros (campo perdido,
+        // tipo incorrecto, etc.) — el usuario puede pasarnos el log si vuelve a pasar.
+        console.error('schedules POST: faltan campos', { faltan, body })
         return NextResponse.json(
           {
             success: false,
-            error: 'court_id, start_date y end_date requeridos',
+            error: `Faltan datos para crear el bloqueo: ${faltan.join(', ')}`,
+            received: { court_id: body.court_id, start_date: body.start_date, end_date: body.end_date },
           },
           { status: 400 }
         )

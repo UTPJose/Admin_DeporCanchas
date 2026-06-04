@@ -36,6 +36,53 @@ export const notificationsService = {
   },
 
   /**
+   * Notificaciones destinadas al panel admin: las que el cliente generó al
+   * pagar o cancelar reservas (tipo con prefijo "admin_"). Paginadas.
+   */
+  async getAdminNotifications(opts: { page?: number; perPage?: number; onlyUnread?: boolean } = {}): Promise<{
+    items: Notificacion[]
+    total: number
+    page: number
+    perPage: number
+  }> {
+    const page = Math.max(1, opts.page ?? 1)
+    const perPage = Math.max(1, Math.min(100, opts.perPage ?? 20))
+    const from = (page - 1) * perPage
+    const to = from + perPage - 1
+    let query = supabase
+      .from('notificaciones')
+      .select('*', { count: 'exact' })
+      .like('tipo', 'admin_%')
+    if (opts.onlyUnread) query = query.eq('leido', false)
+    const { data, count, error } = await query
+      .order('creado_en', { ascending: false })
+      .range(from, to)
+    if (error) throw new Error(`Error al obtener notificaciones admin: ${error.message}`)
+    return { items: data || [], total: count || 0, page, perPage }
+  },
+
+  /** Conteo de notificaciones admin no leídas (para el badge de la campana). */
+  async getAdminUnreadCount(): Promise<number> {
+    const { count, error } = await supabase
+      .from('notificaciones')
+      .select('*', { count: 'exact', head: true })
+      .like('tipo', 'admin_%')
+      .eq('leido', false)
+    if (error) throw new Error(`Error al contar notificaciones admin: ${error.message}`)
+    return count || 0
+  },
+
+  /** Marca todas las notificaciones admin como leídas. */
+  async markAllAdminRead(): Promise<void> {
+    const { error } = await supabase
+      .from('notificaciones')
+      .update({ leido: true })
+      .like('tipo', 'admin_%')
+      .eq('leido', false)
+    if (error) throw new Error(`Error al marcar todas como leídas: ${error.message}`)
+  },
+
+  /**
    * Obtener notificaciones no leídas
    */
   async getUnreadNotifications(userId: number): Promise<Notificacion[]> {

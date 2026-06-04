@@ -1,7 +1,14 @@
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
 import { supabaseAdmin } from '@/lib/supabase'
-import { requireAdmin, UnauthorizedError, unauthorizedResponse } from '@/lib/auth/requireAdmin'
+import {
+  requireAdmin,
+  requireSuperAdmin,
+  UnauthorizedError,
+  ForbiddenError,
+  unauthorizedResponse,
+  forbiddenResponse,
+} from '@/lib/auth/requireAdmin'
 import { hashPassword } from '@/lib/auth/password'
 
 export const runtime = 'nodejs'
@@ -56,12 +63,13 @@ export async function GET() {
   return Response.json({ success: true, data: admins })
 }
 
-// POST /api/admins — crear nuevo admin
+// POST /api/admins — crear nuevo admin (SOLO super-admin)
 export async function POST(request: NextRequest) {
   try {
-    await requireAdmin()
+    await requireSuperAdmin()
   } catch (e) {
     if (e instanceof UnauthorizedError) return unauthorizedResponse()
+    if (e instanceof ForbiddenError) return forbiddenResponse()
     throw e
   }
 

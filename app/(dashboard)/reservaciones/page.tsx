@@ -11,11 +11,28 @@ const fmtFecha = (iso: string) =>
 const fmtHora = (iso: string) =>
   new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: LIMA_TZ }).format(new Date(iso))
 
+/** Parsea "0-50" / "50-100" / "200+" / "" → [min, max] (max Infinity si "+"). */
+const parsePriceRange = (s?: string): [number, number] => {
+  if (!s) return [0, Infinity]
+  if (s.endsWith('+')) return [Number(s.replace('+', '')) || 0, Infinity]
+  const [a, b] = s.split('-').map((x) => Number(x))
+  return [Number.isFinite(a) ? a : 0, Number.isFinite(b) ? b : Infinity]
+}
+
 export default function ReservacionesPage() {
   const [raw, setRaw] = useState<any[]>([])
+  const [campuses, setCampuses] = useState<{ id: number; nombre: string }[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [filters, setFilters] = useState<FilterValues>({ status: 'todas' })
+
+  // Lista de campus para el selector del filtro
+  useEffect(() => {
+    fetch('/api/campus')
+      .then((r) => r.json())
+      .then((j) => { if (j.success) setCampuses(j.data || []) })
+      .catch(() => {})
+  }, [])
 
   const fetchReservations = async () => {
     try {
@@ -45,12 +62,23 @@ export default function ReservacionesPage() {
 
   const reservations: Reservation[] = useMemo(() => {
     const filtro = (filters.status as FiltroReserva) || 'todas'
+    const [pMin, pMax] = parsePriceRange(filters.price)
+    const emailQ = filters.email?.trim().toLowerCase() ?? ''
     return (raw || [])
       .filter((r) => pasaFiltro(filtro, r.estado, r.fecha_termina))
       .filter((r) => {
         if (!filters.campus) return true
         const campus = r.cancha?.campus?.nombre?.toLowerCase() || ''
         return campus.includes(filters.campus.toLowerCase())
+      })
+      .filter((r) => {
+        const p = Number(r.precio_total) || 0
+        return p >= pMin && p <= pMax
+      })
+      .filter((r) => {
+        if (!emailQ) return true
+        const email = (r.usuario?.email || '').toLowerCase()
+        return email.includes(emailQ)
       })
       .map((r) => ({
         id: r.id,
@@ -64,7 +92,7 @@ export default function ReservacionesPage() {
         precio: r.precio_total,
         estado: estadoMostrado(r.estado, r.fecha_termina),
       }))
-  }, [raw, filters.status, filters.campus])
+  }, [raw, filters.status, filters.campus, filters.price, filters.email])
 
   const handleCancel = async (id: number) => {
     if (!confirm('¿Cancelar esta reservación? El horario quedará libre.')) return
@@ -86,7 +114,10 @@ export default function ReservacionesPage() {
 
       {error && <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800">{error}</div>}
 
-      <FilterBar onFilterChange={(newFilters) => setFilters({ ...filters, ...newFilters })} />
+      <FilterBar
+        campuses={campuses}
+        onFilterChange={(newFilters) => setFilters({ ...filters, ...newFilters })}
+      />
 
       <ReservationsTable data={reservations} loading={loading} onCancel={handleCancel} />
     </div>

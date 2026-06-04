@@ -16,6 +16,8 @@ export interface AdminUser {
   dni?: string | null
   roles_id: number
   rol_nombre: string
+  /** true si es el super-admin (único que ve y opera la pestaña de Administradores). */
+  isSuper?: boolean
 }
 
 interface AuthContextType {

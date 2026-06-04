@@ -89,15 +89,21 @@ export function PricingByCourt({ courts, onRefresh }: { courts: Court[]; onRefre
       <div className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Cancha</label>
-          <select
-            value={selectedCourt ?? ''}
-            onChange={(e) => setSelectedCourt(parseInt(e.target.value))}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2"
-          >
-            {courts.map((c) => (
-              <option key={c.id} value={c.id}>{c.nombre}</option>
-            ))}
-          </select>
+          {courts.length === 0 ? (
+            <div className="w-full border border-dashed border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-500 bg-gray-50">
+              Sin registrar
+            </div>
+          ) : (
+            <select
+              value={selectedCourt ?? ''}
+              onChange={(e) => setSelectedCourt(parseInt(e.target.value))}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2"
+            >
+              {courts.map((c) => (
+                <option key={c.id} value={c.id}>{c.nombre}</option>
+              ))}
+            </select>
+          )}
         </div>
 
         <div className="bg-gray-50 rounded-lg p-4">

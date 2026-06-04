@@ -1,6 +1,7 @@
 'use client'
 
 interface FilterBarProps {
+  campuses?: { id: number; nombre: string }[]
   onFilterChange?: (filters: FilterValues) => void
 }
 
@@ -14,7 +15,7 @@ export interface FilterValues {
   email?: string
 }
 
-export function FilterBar({ onFilterChange }: FilterBarProps) {
+export function FilterBar({ campuses = [], onFilterChange }: FilterBarProps) {
   const handleChange = (field: keyof FilterValues, value: string) => {
     onFilterChange?.({
       [field]: value,
@@ -53,18 +54,21 @@ export function FilterBar({ onFilterChange }: FilterBarProps) {
             <option value="finalizadas">Finalizadas</option>
             <option value="pendientes">Pendientes</option>
             <option value="canceladas">Canceladas</option>
-            <option value="expiradas">Expiradas</option>
+            <option value="expiradas">No completadas</option>
           </select>
         </div>
 
         <div>
           <label className="block text-xs font-medium text-gray-700 mb-1">Campus</label>
-          <input
-            type="text"
-            placeholder="Campus..."
+          <select
             onChange={(e) => handleChange('campus', e.target.value)}
             className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-600"
-          />
+          >
+            <option value="">Todos</option>
+            {campuses.map((c) => (
+              <option key={c.id} value={c.nombre}>{c.nombre}</option>
+            ))}
+          </select>
         </div>
 
         <div>

@@ -1,7 +1,13 @@
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
 import { supabaseAdmin } from '@/lib/supabase'
-import { requireAdmin, UnauthorizedError, unauthorizedResponse } from '@/lib/auth/requireAdmin'
+import {
+  requireSuperAdmin,
+  UnauthorizedError,
+  ForbiddenError,
+  unauthorizedResponse,
+  forbiddenResponse,
+} from '@/lib/auth/requireAdmin'
 import { hashPassword } from '@/lib/auth/password'
 
 export const runtime = 'nodejs'
@@ -17,9 +23,10 @@ const patchSchema = z.object({
 export async function PATCH(request: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   let admin
   try {
-    admin = await requireAdmin()
+    admin = await requireSuperAdmin()
   } catch (e) {
     if (e instanceof UnauthorizedError) return unauthorizedResponse()
+    if (e instanceof ForbiddenError) return forbiddenResponse()
     throw e
   }
 

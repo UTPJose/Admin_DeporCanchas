@@ -1,6 +1,6 @@
 'use client'
 
-import { Edit2, Power } from 'lucide-react'
+import { Edit2, Power, KeyRound } from 'lucide-react'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import type { Admin } from './AdminForm'
 
@@ -9,9 +9,10 @@ interface AdminsListProps {
   loading: boolean
   onEdit: (admin: Admin) => void
   onToggle: (admin: Admin) => void
+  onResetPassword: (admin: Admin) => void
 }
 
-export function AdminsList({ admins, loading, onEdit, onToggle }: AdminsListProps) {
+export function AdminsList({ admins, loading, onEdit, onToggle, onResetPassword }: AdminsListProps) {
   if (loading) {
     return (
       <div className="flex justify-center py-12">
@@ -61,6 +62,13 @@ export function AdminsList({ admins, loading, onEdit, onToggle }: AdminsListProp
                       title="Editar"
                     >
                       <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => onResetPassword(admin)}
+                      className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                      title="Resetear contraseña"
+                    >
+                      <KeyRound className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => onToggle(admin)}

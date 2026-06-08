@@ -86,12 +86,35 @@ export const courtsService = {
   },
 
   /**
-   * Eliminar una cancha
+   * Eliminar una cancha de forma inteligente:
+   *  - Si tiene reservas históricas → soft-delete (estado='inactivo'). Preserva
+   *    el historial; en el cliente la cancha desaparece (filtro por estado).
+   *  - Si NO tiene reservas → hard-delete: limpia disponibilidad + tarifas
+   *    enlazadas (FK) y borra la cancha.
+   * Devuelve `mode` para que la UI muestre el mensaje correcto.
    */
-  async deleteCourt(id: number): Promise<void> {
-    const { error } = await supabase.from('canchas_deportivas').delete().eq('id', id)
+  async deleteCourt(id: number): Promise<{ mode: 'soft' | 'hard' }> {
+    const { count: reservasCount } = await supabase
+      .from('reservas')
+      .select('*', { count: 'exact', head: true })
+      .eq('canchasdep_id', id)
 
+    if ((reservasCount || 0) > 0) {
+      // Soft-delete: preserva el historial
+      const { error } = await supabase
+        .from('canchas_deportivas')
+        .update({ estado: 'inactivo' })
+        .eq('id', id)
+      if (error) throw new Error(`Error al marcar la cancha como inactiva: ${error.message}`)
+      return { mode: 'soft' }
+    }
+
+    // Hard-delete: limpiar dependencias FK primero
+    await supabase.from('cancha_disponibilidad').delete().eq('canchasdep_id', id)
+    await supabase.from('tarifas_canchasdep').delete().eq('canchasdep_id', id)
+    const { error } = await supabase.from('canchas_deportivas').delete().eq('id', id)
     if (error) throw new Error(`Error al eliminar cancha: ${error.message}`)
+    return { mode: 'hard' }
   },
 
   /**

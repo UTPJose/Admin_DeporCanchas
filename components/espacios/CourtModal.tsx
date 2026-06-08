@@ -55,6 +55,8 @@ export function CourtModal({
   const [formData, setFormData] = useState<CourtFormData>(initialData ?? emptyForm(campuses, tipos))
   const [error, setError] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
+  // submitting evita doble/triple submit si el usuario clickea rápido o el browser hace doble-click.
+  const [submitting, setSubmitting] = useState(false)
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -110,6 +112,7 @@ export function CourtModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (submitting) return // guard anti-doble-submit
     setError(null)
 
     if (!formData.nombre.trim()) {
@@ -117,12 +120,15 @@ export function CourtModal({
       return
     }
 
+    setSubmitting(true)
     try {
       await onSubmit(formData)
       setFormData(emptyForm(campuses, tipos))
       onClose()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al guardar')
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -296,10 +302,10 @@ export function CourtModal({
             </button>
             <button
               type="submit"
-              disabled={loading || uploading}
+              disabled={loading || uploading || submitting}
               className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors disabled:opacity-50"
             >
-              {loading ? 'Guardando...' : 'Guardar'}
+              {submitting || loading ? 'Guardando...' : 'Guardar'}
             </button>
           </div>
         </form>

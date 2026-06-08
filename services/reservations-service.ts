@@ -84,11 +84,18 @@ export const reservationsService = {
     console.log('[RESERVATIONS SERVICE] Pagos query error:', pagosError)
     console.log('[RESERVATIONS SERVICE] Pagos retrieved:', pagos)
 
+    // Traer reembolsos relacionados (visibilidad para procesar pagos devueltos)
+    const { data: reembolsos } = await supabaseAdmin
+      .from('reembolsos')
+      .select('id, reserva_id, monto, porcentaje, estado, metodo_destino, destino_detalle, procesado_en, creado_en')
+      .in('reserva_id', reservas.map((r: any) => r.id))
+
     // Mapeos para búsqueda rápida
     const usuariosMap = new Map(usuarios?.map((u: any) => [u.id, u]) || [])
     const canchasMap = new Map(canchas?.map((c: any) => [c.id, c]) || [])
     const campusMap = new Map(campus?.map((cp: any) => [cp.id, cp]) || [])
     const pagosMap = new Map(pagos?.map((p: any) => [p.reserva_id, p]) || [])
+    const reembolsosMap = new Map(reembolsos?.map((r: any) => [r.reserva_id, r]) || [])
 
     // Combinar datos — anidar campus dentro de cancha para que la UI lo lea
     const result = reservas.map((r: any) => {
@@ -98,6 +105,7 @@ export const reservationsService = {
         usuario: usuariosMap.get(r.usuarios_id),
         cancha: cancha ? { ...cancha, campus: campusMap.get(cancha.campus_id) ?? null } : null,
         pago: pagosMap.get(r.id),
+        reembolso: reembolsosMap.get(r.id) ?? null,
       }
     })
 

@@ -83,11 +83,15 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     const { id } = await params
     const courtId = parseInt(id, 10)
 
-    await courtsService.deleteCourt(courtId)
+    const result = await courtsService.deleteCourt(courtId)
 
     return NextResponse.json({
       success: true,
-      message: 'Cancha eliminada exitosamente',
+      mode: result.mode, // 'hard' (eliminada) | 'soft' (marcada inactiva)
+      message:
+        result.mode === 'soft'
+          ? 'La cancha tiene reservas históricas. Se marcó como inactiva (no aparece para el cliente).'
+          : 'Cancha eliminada exitosamente',
     })
   } catch (error) {
     console.error('Error deleting court:', error)

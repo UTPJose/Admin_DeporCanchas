@@ -13,6 +13,7 @@ export interface FilterValues {
   price?: string
   status?: string
   email?: string
+  code?: string
 }
 
 export function FilterBar({ campuses = [], onFilterChange }: FilterBarProps) {
@@ -24,7 +25,17 @@ export function FilterBar({ campuses = [], onFilterChange }: FilterBarProps) {
 
   return (
     <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-3">
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1">Código</label>
+          <input
+            type="text"
+            placeholder="Ej: A1B2C3D4"
+            onChange={(e) => handleChange('code', e.target.value.toUpperCase())}
+            className="w-full px-2 py-1 text-sm font-mono uppercase border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-600 placeholder:font-sans placeholder:normal-case"
+          />
+        </div>
+
         <div>
           <label className="block text-xs font-medium text-gray-700 mb-1">Desde</label>
           <input

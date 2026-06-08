@@ -104,14 +104,18 @@ export default function EspaciosPage() {
   }
 
   const handleDeleteCourt = async (id: number) => {
-    if (confirm('¿Estás seguro de que deseas eliminar esta cancha?')) {
-      try {
-        const res = await fetch(`/api/courts/${id}`, { method: 'DELETE' })
-        if (!res.ok) throw new Error('Error al eliminar')
-        fetchData()
-      } catch (err) {
-        alert(err instanceof Error ? err.message : 'Error al eliminar')
+    if (!confirm('¿Estás seguro de que deseas eliminar esta cancha?')) return
+    try {
+      const res = await fetch(`/api/courts/${id}`, { method: 'DELETE' })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok || !json.success) {
+        throw new Error(json.error || 'Error al eliminar')
       }
+      // Si fue soft-delete por tener reservas históricas, avisamos al usuario.
+      if (json.mode === 'soft') alert(json.message)
+      fetchData()
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Error al eliminar')
     }
   }
 

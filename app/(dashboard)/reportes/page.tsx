@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Card } from '@/components/common/Card'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { ReportsFilterBar } from '@/components/reportes/ReportsFilterBar'
 import { RevenueCard } from '@/components/reportes/RevenueCard'
 import { RevenueChart } from '@/components/reportes/RevenueChart'
 import { DistributionChart } from '@/components/reportes/DistributionChart'
+import { Download, FileText } from 'lucide-react'
 
 interface ReportData {
   totalRevenue: number
@@ -25,6 +26,123 @@ export default function ReportesPage() {
   const [reportData, setReportData] = useState<ReportData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [exporting, setExporting] = useState<'csv' | 'pdf' | null>(null)
+  const reportRef = useRef<HTMLDivElement>(null)
+
+  // ====== Exportación ======
+
+  const downloadFile = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
+  /** Escapa un valor para CSV (comillas dobles + envuelve si tiene coma/quote/salto). */
+  const csvCell = (v: unknown): string => {
+    const s = v === null || v === undefined ? '' : String(v)
+    if (/[",\n;]/.test(s)) return `"${s.replace(/"/g, '""')}"`
+    return s
+  }
+
+  const exportCSV = () => {
+    if (!reportData) return
+    setExporting('csv')
+    try {
+      const lines: string[] = []
+      lines.push(`Reportes y Análisis`)
+      lines.push(`Período;${startDate};${endDate}`)
+      lines.push('')
+      lines.push(`Ingresos Totales;Promedio por Reserva;Total Reservas;Variación %`)
+      lines.push(
+        [
+          reportData.totalRevenue.toFixed(2),
+          reportData.averageReservation.toFixed(2),
+          reportData.totalReservations,
+          reportData.variationPercentage.toFixed(1),
+        ]
+          .map(csvCell)
+          .join(';')
+      )
+      lines.push('')
+      lines.push('Ingresos por Día')
+      lines.push('Fecha;Monto (S/)')
+      reportData.dailyData.forEach((d) => lines.push([d.date, d.revenue.toFixed(2)].map(csvCell).join(';')))
+      lines.push('')
+      lines.push('Por Deporte')
+      lines.push('Deporte;Monto (S/)')
+      reportData.byDeport.forEach((d) => lines.push([d.deport, d.amount.toFixed(2)].map(csvCell).join(';')))
+      lines.push('')
+      lines.push('Ingresos por Cancha')
+      lines.push('Cancha;Monto (S/)')
+      reportData.byCourt.forEach((c) => lines.push([c.cancha, c.amount.toFixed(2)].map(csvCell).join(';')))
+
+      // BOM + CRLF para que Excel abra bien en español
+      const csv = '﻿' + lines.join('\r\n')
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
+      downloadFile(blob, `reportes_${startDate}_${endDate}.csv`)
+    } finally {
+      setExporting(null)
+    }
+  }
+
+  const exportPDF = async () => {
+    if (!reportData || !reportRef.current) return
+    setExporting('pdf')
+    try {
+      const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
+        import('jspdf'),
+        import('html2canvas'),
+      ])
+      // Capturar el contenedor del reporte tal cual aparece en pantalla
+      const canvas = await html2canvas(reportRef.current, {
+        backgroundColor: '#ffffff',
+        scale: 2, // mejor resolución
+        useCORS: true,
+        logging: false,
+      })
+      const imgData = canvas.toDataURL('image/png')
+
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+      const pageW = pdf.internal.pageSize.getWidth()
+      const pageH = pdf.internal.pageSize.getHeight()
+      // Convertir px del canvas a mm manteniendo el ratio
+      const ratio = canvas.height / canvas.width
+      const imgW = pageW - 20 // 10mm de margen a cada lado
+      const imgH = imgW * ratio
+
+      // Si entra en una página, lo coloco. Si no, lo divido en páginas.
+      if (imgH <= pageH - 20) {
+        pdf.addImage(imgData, 'PNG', 10, 10, imgW, imgH)
+      } else {
+        // Multi-page: corto el canvas verticalmente
+        const sliceH = Math.floor(((pageH - 20) / imgW) * canvas.width)
+        let y = 0
+        let page = 0
+        const tmp = document.createElement('canvas')
+        const ctx = tmp.getContext('2d')!
+        tmp.width = canvas.width
+        while (y < canvas.height) {
+          const h = Math.min(sliceH, canvas.height - y)
+          tmp.height = h
+          ctx.clearRect(0, 0, tmp.width, tmp.height)
+          ctx.drawImage(canvas, 0, y, canvas.width, h, 0, 0, canvas.width, h)
+          const slice = tmp.toDataURL('image/png')
+          if (page > 0) pdf.addPage()
+          pdf.addImage(slice, 'PNG', 10, 10, imgW, (h / canvas.width) * imgW)
+          y += h
+          page++
+        }
+      }
+      pdf.save(`reportes_${startDate}_${endDate}.pdf`)
+    } finally {
+      setExporting(null)
+    }
+  }
 
   useEffect(() => {
     fetchReportData()
@@ -67,9 +185,29 @@ export default function ReportesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Reportes y Análisis</h1>
-        <p className="text-gray-600 mt-1">Visualiza ingresos y estadísticas del sistema</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Reportes y Análisis</h1>
+          <p className="text-gray-600 mt-1">Visualiza ingresos y estadísticas del sistema</p>
+        </div>
+        <div className="flex gap-2 shrink-0">
+          <button
+            onClick={exportCSV}
+            disabled={!reportData || !!exporting}
+            className="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 text-sm"
+          >
+            <Download className="w-4 h-4" />
+            {exporting === 'csv' ? 'Exportando…' : 'CSV'}
+          </button>
+          <button
+            onClick={exportPDF}
+            disabled={!reportData || !!exporting}
+            className="inline-flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 text-sm"
+          >
+            <FileText className="w-4 h-4" />
+            {exporting === 'pdf' ? 'Generando…' : 'PDF'}
+          </button>
+        </div>
       </div>
 
       <Card>
@@ -92,7 +230,7 @@ export default function ReportesPage() {
           <LoadingSpinner />
         </div>
       ) : reportData ? (
-        <>
+        <div ref={reportRef} className="space-y-6 bg-white p-4 rounded-lg">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <RevenueCard
               label="Ingresos Totales"
@@ -153,7 +291,7 @@ export default function ReportesPage() {
               </div>
             )}
           </Card>
-        </>
+        </div>
       ) : null}
     </div>
   )

@@ -64,6 +64,7 @@ export default function ReservacionesPage() {
     const filtro = (filters.status as FiltroReserva) || 'todas'
     const [pMin, pMax] = parsePriceRange(filters.price)
     const emailQ = filters.email?.trim().toLowerCase() ?? ''
+    const codeQ = (filters as any).code?.trim().toUpperCase() ?? ''
     return (raw || [])
       .filter((r) => pasaFiltro(filtro, r.estado, r.fecha_termina))
       .filter((r) => {
@@ -80,8 +81,13 @@ export default function ReservacionesPage() {
         const email = (r.usuario?.email || '').toLowerCase()
         return email.includes(emailQ)
       })
+      .filter((r) => {
+        if (!codeQ) return true
+        return (r.code || '').toUpperCase().includes(codeQ)
+      })
       .map((r) => ({
         id: r.id,
+        code: r.code || '—',
         usuario_nombre: r.usuario?.nombre || '—',
         usuario_email: r.usuario?.email || '—',
         campus_nombre: r.cancha?.campus?.nombre || '—',
@@ -91,8 +97,30 @@ export default function ReservacionesPage() {
         metodoPago: r.pago?.metodo_pago || null,
         precio: r.precio_total,
         estado: estadoMostrado(r.estado, r.fecha_termina),
+        reembolso: r.reembolso
+          ? {
+              id: r.reembolso.id,
+              monto: r.reembolso.monto,
+              porcentaje: r.reembolso.porcentaje,
+              estado: r.reembolso.estado,
+              metodo_destino: r.reembolso.metodo_destino,
+              destino_detalle: r.reembolso.destino_detalle,
+              procesado_en: r.reembolso.procesado_en,
+            }
+          : null,
       }))
-  }, [raw, filters.status, filters.campus, filters.price, filters.email])
+  }, [raw, filters.status, filters.campus, filters.price, filters.email, (filters as any).code])
+
+  const handleMarkRefundProcessed = async (refundId: number) => {
+    if (!confirm('¿Marcar este reembolso como procesado? (acción manual)')) return
+    try {
+      const res = await fetch(`/api/reembolsos/${refundId}/procesar`, { method: 'POST' })
+      if (!res.ok) throw new Error('Error al marcar como procesado')
+      fetchReservations()
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Error')
+    }
+  }
 
   const handleCancel = async (id: number) => {
     if (!confirm('¿Cancelar esta reservación? El horario quedará libre.')) return
@@ -119,7 +147,12 @@ export default function ReservacionesPage() {
         onFilterChange={(newFilters) => setFilters({ ...filters, ...newFilters })}
       />
 
-      <ReservationsTable data={reservations} loading={loading} onCancel={handleCancel} />
+      <ReservationsTable
+        data={reservations}
+        loading={loading}
+        onCancel={handleCancel}
+        onMarkRefundProcessed={handleMarkRefundProcessed}
+      />
     </div>
   )
 }

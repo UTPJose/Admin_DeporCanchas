@@ -97,14 +97,6 @@ export function Header() {
 
   return (
     <header className="bg-white border-b border-border-color h-16 flex items-center justify-between px-6 shadow-sm sticky top-0 z-40">
-      <div className="flex-1">
-        <input
-          type="text"
-          placeholder="Buscar..."
-          className="px-4 py-2 bg-bg-light border border-border-color rounded-lg text-sm text-text-dark placeholder-text-secondary w-64 focus:outline-none focus:ring-2 focus:ring-primary"
-        />
-      </div>
-
       <div className="flex items-center gap-6 ml-auto">
         {/* Notificaciones */}
         <div className="relative" ref={bellRef}>

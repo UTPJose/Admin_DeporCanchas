@@ -6,8 +6,19 @@ import type { EstadoMostrado } from '@/lib/estado-reserva'
 
 const PAGE_SIZE = 10
 
+export interface ReservationRefund {
+  id: number
+  monto: number
+  porcentaje: number
+  estado: 'pendiente' | 'procesado' | 'fallido'
+  metodo_destino: string | null
+  destino_detalle: string | null
+  procesado_en: string | null
+}
+
 export interface Reservation {
   id: number
+  code: string
   usuario_nombre: string
   usuario_email: string
   campus_nombre: string
@@ -17,15 +28,17 @@ export interface Reservation {
   metodoPago: string | null
   precio: number
   estado: EstadoMostrado
+  reembolso: ReservationRefund | null
 }
 
 interface ReservationsTableProps {
   data: Reservation[]
   loading?: boolean
   onCancel?: (id: number) => Promise<void> | void
+  onMarkRefundProcessed?: (refundId: number) => Promise<void> | void
 }
 
-export function ReservationsTable({ data, loading, onCancel }: ReservationsTableProps) {
+export function ReservationsTable({ data, loading, onCancel, onMarkRefundProcessed }: ReservationsTableProps) {
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [isDetailOpen, setIsDetailOpen] = useState(false)
   const [page, setPage] = useState(1)
@@ -62,6 +75,7 @@ export function ReservationsTable({ data, loading, onCancel }: ReservationsTable
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
+                <th className="px-4 py-3 text-left font-semibold text-gray-700">Código</th>
                 <th className="px-4 py-3 text-left font-semibold text-gray-700">Cliente</th>
                 <th className="px-4 py-3 text-left font-semibold text-gray-700">Cancha</th>
                 <th className="px-4 py-3 text-left font-semibold text-gray-700">Fecha y hora</th>
@@ -72,7 +86,7 @@ export function ReservationsTable({ data, loading, onCancel }: ReservationsTable
             <tbody>
               {data.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
                     No hay reservaciones
                   </td>
                 </tr>
@@ -85,6 +99,11 @@ export function ReservationsTable({ data, loading, onCancel }: ReservationsTable
                       selectedId === res.id ? 'bg-green-50' : ''
                     }`}
                   >
+                    <td className="px-4 py-3">
+                      <span className="font-mono text-xs font-semibold text-gray-800 bg-gray-100 px-2 py-1 rounded">
+                        {res.code}
+                      </span>
+                    </td>
                     <td className="px-4 py-3">
                       <p className="font-medium text-gray-900">{res.usuario_nombre}</p>
                       <p className="text-xs text-gray-500">{res.usuario_email}</p>
@@ -148,6 +167,11 @@ export function ReservationsTable({ data, loading, onCancel }: ReservationsTable
 
           <div className="space-y-3 text-sm">
             <div>
+              <p className="text-gray-600">Código de reserva</p>
+              <p className="font-mono font-semibold text-base text-gray-900 mt-0.5">{selected.code}</p>
+            </div>
+
+            <div className="pt-3 border-t border-gray-200">
               <p className="text-gray-600">Cliente</p>
               <p className="font-medium text-gray-900">{selected.usuario_nombre}</p>
               <p className="text-gray-500">{selected.usuario_email}</p>
@@ -183,6 +207,43 @@ export function ReservationsTable({ data, loading, onCancel }: ReservationsTable
                 <StatusBadge estado={selected.estado} />
               </p>
             </div>
+
+            {selected.reembolso && (
+              <div className="pt-4 border-t border-gray-200">
+                <p className="text-gray-600 mb-2">Reembolso</p>
+                <div className={`rounded-lg p-3 ${
+                  selected.reembolso.estado === 'procesado'
+                    ? 'bg-green-50 border border-green-200'
+                    : selected.reembolso.estado === 'pendiente'
+                      ? 'bg-amber-50 border border-amber-200'
+                      : 'bg-red-50 border border-red-200'
+                }`}>
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="font-bold text-gray-900">S/ {selected.reembolso.monto.toFixed(2)}</span>
+                    <span className="text-xs text-gray-600">({selected.reembolso.porcentaje}%)</span>
+                  </div>
+                  <p className="text-xs text-gray-700 mt-1 capitalize">
+                    Estado: <span className="font-semibold">{selected.reembolso.estado}</span>
+                    {selected.reembolso.procesado_en && (
+                      <> · {new Date(selected.reembolso.procesado_en).toLocaleDateString('es-PE')}</>
+                    )}
+                  </p>
+                  {selected.reembolso.metodo_destino && (
+                    <p className="text-xs text-gray-600 mt-1">
+                      Destino: {selected.reembolso.metodo_destino === 'tarjeta' ? selected.reembolso.destino_detalle : `Yape al ${selected.reembolso.destino_detalle ?? '—'}`}
+                    </p>
+                  )}
+                </div>
+                {selected.reembolso.estado === 'pendiente' && onMarkRefundProcessed && (
+                  <button
+                    onClick={() => onMarkRefundProcessed(selected.reembolso!.id)}
+                    className="mt-2 w-full px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm font-medium transition-colors"
+                  >
+                    Marcar como procesado
+                  </button>
+                )}
+              </div>
+            )}
 
             {cancelable(selected.estado) && (
               <div className="pt-4 border-t border-gray-200">

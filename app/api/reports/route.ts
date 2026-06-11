@@ -28,9 +28,16 @@ export async function GET(request: NextRequest) {
         let to = endDate
         if ((!from || !to) && period) {
           const now = new Date()
-          const days = period === 'month' ? 30 : 7
-          to = now.toISOString()
-          from = new Date(now.getTime() - days * 24 * 60 * 60 * 1000).toISOString()
+          // 'day' = solo hoy (desde 00:00 local); 'week' = 7 días; 'month' = 30 días.
+          if (period === 'day') {
+            const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+            from = startOfDay.toISOString()
+            to = now.toISOString()
+          } else {
+            const days = period === 'month' ? 30 : 7
+            to = now.toISOString()
+            from = new Date(now.getTime() - days * 24 * 60 * 60 * 1000).toISOString()
+          }
         }
         if (!from || !to) {
           return NextResponse.json(

@@ -91,56 +91,187 @@ export default function ReportesPage() {
   }
 
   const exportPDF = async () => {
-    if (!reportData || !reportRef.current) return
+    if (!reportData) return
     setExporting('pdf')
     try {
-      const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
-        import('jspdf'),
-        import('html2canvas'),
-      ])
-      // Capturar el contenedor del reporte tal cual aparece en pantalla
-      const canvas = await html2canvas(reportRef.current, {
-        backgroundColor: '#ffffff',
-        scale: 2, // mejor resolución
-        useCORS: true,
-        logging: false,
-      })
-      const imgData = canvas.toDataURL('image/png')
+      const { default: jsPDF } = await import('jspdf')
 
+      // PDF generado a partir de `reportData` (no se captura el DOM con
+      // html2canvas porque no soporta colores oklch de Tailwind v4 y rompe).
       const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
       const pageW = pdf.internal.pageSize.getWidth()
       const pageH = pdf.internal.pageSize.getHeight()
-      // Convertir px del canvas a mm manteniendo el ratio
-      const ratio = canvas.height / canvas.width
-      const imgW = pageW - 20 // 10mm de margen a cada lado
-      const imgH = imgW * ratio
+      const marginX = 12
+      const usableW = pageW - marginX * 2
+      let y = 16
 
-      // Si entra en una página, lo coloco. Si no, lo divido en páginas.
-      if (imgH <= pageH - 20) {
-        pdf.addImage(imgData, 'PNG', 10, 10, imgW, imgH)
-      } else {
-        // Multi-page: corto el canvas verticalmente
-        const sliceH = Math.floor(((pageH - 20) / imgW) * canvas.width)
-        let y = 0
-        let page = 0
-        const tmp = document.createElement('canvas')
-        const ctx = tmp.getContext('2d')!
-        tmp.width = canvas.width
-        while (y < canvas.height) {
-          const h = Math.min(sliceH, canvas.height - y)
-          tmp.height = h
-          ctx.clearRect(0, 0, tmp.width, tmp.height)
-          ctx.drawImage(canvas, 0, y, canvas.width, h, 0, 0, canvas.width, h)
-          const slice = tmp.toDataURL('image/png')
-          if (page > 0) pdf.addPage()
-          pdf.addImage(slice, 'PNG', 10, 10, imgW, (h / canvas.width) * imgW)
-          y += h
-          page++
+      // Asegura que no escribamos fuera de la página: si no hay espacio
+      // suficiente para `needed` mm, añade una página y resetea `y`.
+      const ensure = (needed: number) => {
+        if (y + needed > pageH - 14) {
+          pdf.addPage()
+          y = 16
         }
       }
+
+      // Header
+      pdf.setFont('helvetica', 'bold')
+      pdf.setFontSize(18)
+      pdf.setTextColor(17, 24, 39) // gray-900
+      pdf.text('Reportes y Análisis', marginX, y)
+      y += 7
+
+      pdf.setFont('helvetica', 'normal')
+      pdf.setFontSize(10)
+      pdf.setTextColor(75, 85, 99) // gray-600
+      pdf.text(`Período: ${startDate}  →  ${endDate}`, marginX, y)
+      y += 4
+      pdf.text(`Generado: ${new Date().toLocaleString('es-PE')}`, marginX, y)
+      y += 6
+      pdf.setDrawColor(229, 231, 235)
+      pdf.line(marginX, y, marginX + usableW, y)
+      y += 6
+
+      // KPIs como cuadrícula 2x2
+      const kpis: Array<[string, string]> = [
+        ['Ingresos Totales', `S/ ${reportData.totalRevenue.toFixed(2)}`],
+        ['Promedio por Reserva', `S/ ${reportData.averageReservation.toFixed(2)}`],
+        ['Total de Reservas', String(reportData.totalReservations)],
+        ['Variación', `${reportData.variationPercentage.toFixed(1)} %`],
+      ]
+      const cardW = (usableW - 6) / 2
+      const cardH = 18
+      ensure(cardH * 2 + 6)
+      for (let i = 0; i < kpis.length; i++) {
+        const col = i % 2
+        const row = Math.floor(i / 2)
+        const x = marginX + col * (cardW + 6)
+        const cy = y + row * (cardH + 4)
+        pdf.setDrawColor(229, 231, 235)
+        pdf.setFillColor(249, 250, 251)
+        pdf.roundedRect(x, cy, cardW, cardH, 2, 2, 'FD')
+        pdf.setFont('helvetica', 'normal')
+        pdf.setFontSize(9)
+        pdf.setTextColor(107, 114, 128)
+        pdf.text(kpis[i][0], x + 4, cy + 6)
+        pdf.setFont('helvetica', 'bold')
+        pdf.setFontSize(13)
+        pdf.setTextColor(17, 24, 39)
+        pdf.text(kpis[i][1], x + 4, cy + 13)
+      }
+      y += cardH * 2 + 4 + 6
+
+      // Helper: tabla simple con cabecera + filas y zebra
+      const drawTable = (title: string, headers: [string, string], rows: Array<[string, string]>) => {
+        ensure(14)
+        pdf.setFont('helvetica', 'bold')
+        pdf.setFontSize(12)
+        pdf.setTextColor(17, 24, 39)
+        pdf.text(title, marginX, y)
+        y += 5
+
+        const rowH = 7
+        const col1W = usableW * 0.65
+        const col2W = usableW - col1W
+
+        // Header bar
+        ensure(rowH)
+        pdf.setFillColor(34, 197, 94)
+        pdf.rect(marginX, y, usableW, rowH, 'F')
+        pdf.setFont('helvetica', 'bold')
+        pdf.setFontSize(10)
+        pdf.setTextColor(255, 255, 255)
+        pdf.text(headers[0], marginX + 2, y + 5)
+        pdf.text(headers[1], marginX + col1W + 2, y + 5)
+        y += rowH
+
+        if (rows.length === 0) {
+          ensure(rowH)
+          pdf.setFont('helvetica', 'italic')
+          pdf.setFontSize(10)
+          pdf.setTextColor(156, 163, 175)
+          pdf.text('Sin datos en el período.', marginX + 2, y + 5)
+          y += rowH + 4
+          return
+        }
+
+        pdf.setFont('helvetica', 'normal')
+        pdf.setFontSize(10)
+        rows.forEach((r, i) => {
+          ensure(rowH)
+          if (i % 2 === 0) {
+            pdf.setFillColor(249, 250, 251)
+            pdf.rect(marginX, y, usableW, rowH, 'F')
+          }
+          pdf.setTextColor(31, 41, 55)
+          // Truncar la primera columna si es muy larga
+          const label = pdf.splitTextToSize(r[0], col1W - 4)[0] ?? r[0]
+          pdf.text(label, marginX + 2, y + 5)
+          pdf.text(r[1], marginX + col1W + col2W - 2, y + 5, { align: 'right' })
+          y += rowH
+        })
+        // Línea inferior
+        pdf.setDrawColor(229, 231, 235)
+        pdf.line(marginX, y, marginX + usableW, y)
+        y += 6
+      }
+
+      drawTable(
+        'Ingresos por Día',
+        ['Fecha', 'Monto (S/)'],
+        reportData.dailyData.map((d) => [d.date, d.revenue.toFixed(2)])
+      )
+      drawTable(
+        'Por Deporte',
+        ['Deporte', 'Monto (S/)'],
+        reportData.byDeport.map((d) => [d.deport, d.amount.toFixed(2)])
+      )
+      drawTable(
+        'Ingresos por Cancha',
+        ['Cancha', 'Monto (S/)'],
+        reportData.byCourt.map((c) => [c.cancha, c.amount.toFixed(2)])
+      )
+
+      // Footer en cada página
+      const pages = pdf.getNumberOfPages()
+      pdf.setFont('helvetica', 'normal')
+      pdf.setFontSize(8)
+      pdf.setTextColor(156, 163, 175)
+      for (let p = 1; p <= pages; p++) {
+        pdf.setPage(p)
+        pdf.text(`DeporCanchas · Reportes · página ${p} de ${pages}`, marginX, pageH - 6)
+      }
+
       pdf.save(`reportes_${startDate}_${endDate}.pdf`)
+    } catch (e) {
+      console.error('Error generando PDF:', e)
+      setError(e instanceof Error ? e.message : 'No se pudo generar el PDF')
     } finally {
       setExporting(null)
+    }
+  }
+
+  // Al clickear los botones Hoy/Semana/Mes, además de cambiar el `period`
+  // recalculamos start/end para que el API filtre el rango correcto. Si el
+  // usuario edita los inputs de fecha manualmente, eso no se sobreescribe.
+  const handlePeriodChange = (p: 'day' | 'week' | 'month') => {
+    setPeriod(p)
+    const today = new Date()
+    const ymd = (d: Date) => d.toISOString().split('T')[0]
+    if (p === 'day') {
+      const t = ymd(today)
+      setStartDate(t)
+      setEndDate(t)
+    } else if (p === 'week') {
+      const from = new Date(today)
+      from.setDate(today.getDate() - 6) // 7 días incluyendo hoy
+      setStartDate(ymd(from))
+      setEndDate(ymd(today))
+    } else {
+      const from = new Date(today)
+      from.setDate(today.getDate() - 29) // 30 días incluyendo hoy
+      setStartDate(ymd(from))
+      setEndDate(ymd(today))
     }
   }
 
@@ -215,7 +346,7 @@ export default function ReportesPage() {
           period={period}
           startDate={startDate}
           endDate={endDate}
-          onPeriodChange={setPeriod}
+          onPeriodChange={handlePeriodChange}
           onStartDateChange={setStartDate}
           onEndDateChange={setEndDate}
         />

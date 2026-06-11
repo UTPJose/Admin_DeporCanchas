@@ -42,6 +42,7 @@ export default function DashboardPage() {
   const [reservations, setReservations] = useState<ReservationData[]>([])
   const [sports, setSports] = useState<SportsData[]>([])
   const [revenue, setRevenue] = useState<RevenueData[]>([])
+  const [revenuePeriod, setRevenuePeriod] = useState<'day' | 'week' | 'month'>('week')
   const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -55,7 +56,7 @@ export default function DashboardPage() {
         const [statsRes, sportsRes, revenueRes, eventsRes] = await Promise.all([
           fetch('/api/reports?type=dashboard'),
           fetch('/api/reports?type=by-deport'),
-          fetch('/api/reports?type=revenue&period=week'),
+          fetch(`/api/reports?type=revenue&period=${revenuePeriod}`),
           fetch('/api/notifications?limit=10'),
         ])
 
@@ -116,7 +117,7 @@ export default function DashboardPage() {
 
     const interval = setInterval(fetchDashboardData, 30000)
     return () => clearInterval(interval)
-  }, [])
+  }, [revenuePeriod])
 
   const mockReservations: ReservationData[] = [
     { day: 'Lun', reservas: 12 },
@@ -183,7 +184,11 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          <RevenueChart data={revenue.length > 0 ? revenue : mockRevenue} loading={loading} />
+          <RevenueChart
+            data={revenue.length > 0 ? revenue : mockRevenue}
+            loading={loading}
+            onPeriodChange={setRevenuePeriod}
+          />
         </div>
         <EventsList events={events} loading={loading} />
       </div>

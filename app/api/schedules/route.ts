@@ -94,19 +94,64 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      const blocked = await schedulesService.blockSchedule(
-        body.court_id,
-        body.start_date,
-        body.end_date,
-        admin.id,
-        body.reason,
-        body.all_day
-      )
+      // ---- Expansión de repetición ----
+      // Si `repetition` es daily/weekly/monthly y hay `repeat_until`,
+      // generamos las ocurrencias y creamos un bloqueo por cada una.
+      // `all_day=true` desactiva repetición (la UI lo oculta también).
+      const rep: 'no_repeat' | 'daily' | 'weekly' | 'monthly' =
+        body.all_day ? 'no_repeat' : body.repetition ?? 'no_repeat'
+      const occurrences: Array<{ start: string; end: string }> = []
+      if (rep === 'no_repeat' || !body.repeat_until) {
+        occurrences.push({ start: body.start_date, end: body.end_date })
+      } else {
+        const startD0 = new Date(body.start_date)
+        const endD0 = new Date(body.end_date)
+        // Tope final = 23:59:59 UTC de repeat_until (acepta YYYY-MM-DD).
+        const untilD = new Date(`${body.repeat_until}T23:59:59Z`)
+        const MAX_OCCURRENCES = 60
+        const stepDays = rep === 'daily' ? 1 : rep === 'weekly' ? 7 : 0 // monthly → setMonth
+        let s = new Date(startD0)
+        let e = new Date(endD0)
+        while (s <= untilD && occurrences.length < MAX_OCCURRENCES) {
+          occurrences.push({ start: s.toISOString(), end: e.toISOString() })
+          if (rep === 'monthly') {
+            const sn = new Date(s); sn.setMonth(sn.getMonth() + 1)
+            const en = new Date(e); en.setMonth(en.getMonth() + 1)
+            s = sn; e = en
+          } else {
+            s = new Date(s.getTime() + stepDays * 86400000)
+            e = new Date(e.getTime() + stepDays * 86400000)
+          }
+        }
+      }
+
+      const created: unknown[] = []
+      const failed: Array<{ start: string; error: string }> = []
+      for (const occ of occurrences) {
+        try {
+          const row = await schedulesService.blockSchedule(
+            body.court_id,
+            occ.start,
+            occ.end,
+            admin.id,
+            body.reason,
+            body.all_day
+          )
+          created.push(row)
+        } catch (e) {
+          // Si un slot ya está reservado/ocupado, lo saltamos sin abortar
+          // el resto de la serie. El usuario verá cuántos se crearon.
+          failed.push({ start: occ.start, error: e instanceof Error ? e.message : String(e) })
+        }
+      }
 
       return NextResponse.json(
         {
           success: true,
-          data: blocked,
+          data: created,
+          created: created.length,
+          skipped: failed.length,
+          repetition: rep,
         },
         { status: 201 }
       )

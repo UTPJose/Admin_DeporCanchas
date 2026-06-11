@@ -39,7 +39,14 @@ export function BlockModal({
   const [startTime, setStartTime] = useState(initialStartTime)
   const [endTime, setEndTime] = useState(initialEndTime)
   const [reason, setReason] = useState(initialReason ?? '')
-  const [repetition, setRepetition] = useState('no_repeat')
+  const [repetition, setRepetition] = useState<'no_repeat' | 'daily' | 'weekly' | 'monthly'>('no_repeat')
+  // Por defecto la repetición termina 4 semanas después de la fecha inicial.
+  const defaultRepeatUntil = (() => {
+    const d = new Date(initialDate + 'T00:00:00')
+    d.setDate(d.getDate() + 28)
+    return d.toISOString().slice(0, 10)
+  })()
+  const [repeatUntil, setRepeatUntil] = useState(defaultRepeatUntil)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -97,6 +104,10 @@ export function BlockModal({
               reason: reason || 'Bloqueo manual',
               all_day: allDay,
               day: date, // YMD Lima, para el modo "todo el día" en el server
+              // Repetición: el server expande en varios bloques si aplica.
+              // Si all_day=true, ignoramos repetición (caso poco frecuente).
+              repetition: allDay ? 'no_repeat' : repetition,
+              repeat_until: repetition === 'no_repeat' ? null : repeatUntil,
             }),
           })
 
@@ -204,19 +215,38 @@ export function BlockModal({
             />
           </div>
 
-          {!isEdit && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Repetición</label>
-              <select
-                value={repetition}
-                onChange={(e) => setRepetition(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-              >
-                <option value="no_repeat">No repetir</option>
-                <option value="daily">Diariamente</option>
-                <option value="weekly">Semanalmente</option>
-                <option value="monthly">Mensualmente</option>
-              </select>
+          {!isEdit && !allDay && (
+            <div className="space-y-2">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Repetición</label>
+                <select
+                  value={repetition}
+                  onChange={(e) =>
+                    setRepetition(e.target.value as 'no_repeat' | 'daily' | 'weekly' | 'monthly')
+                  }
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                >
+                  <option value="no_repeat">No repetir</option>
+                  <option value="daily">Diariamente</option>
+                  <option value="weekly">Semanalmente</option>
+                  <option value="monthly">Mensualmente</option>
+                </select>
+              </div>
+              {repetition !== 'no_repeat' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Repetir hasta</label>
+                  <input
+                    type="date"
+                    value={repeatUntil}
+                    min={date}
+                    onChange={(e) => setRepeatUntil(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    Se crearán bloqueos en cada ocurrencia (máx 60). La hora se mantiene en todos.
+                  </p>
+                </div>
+              )}
             </div>
           )}
 

@@ -87,11 +87,8 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
     return NextResponse.json({
       success: true,
-      mode: result.mode, // 'hard' (eliminada) | 'soft' (marcada inactiva)
-      message:
-        result.mode === 'soft'
-          ? 'La cancha tiene reservas históricas. Se marcó como inactiva (no aparece para el cliente).'
-          : 'Cancha eliminada exitosamente',
+      mode: result.mode,
+      message: 'Cancha eliminada exitosamente (junto a sus reservas, pagos y horarios).',
     })
   } catch (error) {
     console.error('Error deleting court:', error)

@@ -110,19 +110,53 @@ export function CourtModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, initialData?.id])
 
+  const validate = (data: CourtFormData): string | null => {
+    const nombre = data.nombre.trim()
+    if (!nombre) return 'El nombre es requerido'
+    if (nombre.length < 2) return 'El nombre debe tener mínimo 2 caracteres'
+    if (nombre.length > 80) return 'El nombre no puede exceder 80 caracteres'
+    if (!data.campus_id || data.campus_id <= 0) return 'Selecciona un campus'
+    if (!data.tipo_deporte) return 'Selecciona el tipo de cancha'
+    if (
+      !Number.isInteger(data.cantidad_jugadores) ||
+      data.cantidad_jugadores < 1 ||
+      data.cantidad_jugadores > 50
+    ) {
+      return 'La cantidad de jugadores debe ser un entero entre 1 y 50'
+    }
+    const re = /^\d{2}:\d{2}$/
+    if (!data.hora_abre || !re.test(data.hora_abre)) return 'Hora de apertura inválida'
+    if (!data.hora_cierra || !re.test(data.hora_cierra)) return 'Hora de cierre inválida'
+    if (data.hora_abre >= data.hora_cierra) {
+      return 'La hora de apertura debe ser anterior a la de cierre'
+    }
+    if (
+      data.precio_default !== null &&
+      data.precio_default !== undefined &&
+      (Number.isNaN(data.precio_default) || data.precio_default < 0)
+    ) {
+      return 'El precio default no puede ser negativo'
+    }
+    if (!['activo', 'mantenimiento', 'inactivo'].includes(data.estado)) {
+      return 'Estado inválido'
+    }
+    return null
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (submitting) return // guard anti-doble-submit
     setError(null)
 
-    if (!formData.nombre.trim()) {
-      setError('El nombre es requerido')
+    const err = validate(formData)
+    if (err) {
+      setError(err)
       return
     }
 
     setSubmitting(true)
     try {
-      await onSubmit(formData)
+      await onSubmit({ ...formData, nombre: formData.nombre.trim() })
       setFormData(emptyForm(campuses, tipos))
       onClose()
     } catch (err) {
@@ -165,6 +199,9 @@ export function CourtModal({
               onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600"
               placeholder="Ej: Cancha 1"
+              required
+              minLength={2}
+              maxLength={80}
             />
           </div>
 
@@ -190,9 +227,12 @@ export function CourtModal({
             <input
               type="number"
               value={formData.cantidad_jugadores}
-              onChange={(e) => setFormData({ ...formData, cantidad_jugadores: parseInt(e.target.value) })}
+              onChange={(e) => setFormData({ ...formData, cantidad_jugadores: parseInt(e.target.value) || 0 })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600"
-              min="1"
+              min={1}
+              max={50}
+              step={1}
+              required
             />
           </div>
 

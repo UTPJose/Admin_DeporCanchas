@@ -98,27 +98,48 @@ export const schedulesService = {
   },
 
   /**
-   * Obtener horarios bloqueados de una cancha en una semana
+   * Obtener horarios bloqueados y reservas de una cancha en una semana.
+   *
+   * Si se pasa `usuarioId`, sólo devuelve las reservas (no bloqueos manuales)
+   * de ese cliente, para usar el calendario como agenda del usuario.
+   * Cuando no se pasa, devuelve TODO (reservas + bloqueos) como antes.
    */
-  async getBlockedSchedules(courtId: number, weekStart: string, weekEnd: string): Promise<any[]> {
+  async getBlockedSchedules(
+    courtId: number,
+    weekStart: string,
+    weekEnd: string,
+    usuarioId?: number | null,
+  ): Promise<any[]> {
     // Los horarios bloqueados se almacenan como reservas con estado especial.
     // weekStart/weekEnd son YMD en hora Lima; los convertimos a instantes UTC.
     // Ventana [00:00 del lunes Lima, 00:00 del día siguiente al domingo Lima).
     const startUtc = limaToUtcISO(weekStart, '00:00:00')
     const endUtc = limaToUtcISO(addDaysYMD(weekEnd, 1), '00:00:00')
-    const { data, error } = await supabaseAdmin
+
+    let query = supabaseAdmin
       .from('reservas')
-      .select('id, canchasdep_id, fecha_empieza, fecha_termina, estado, code, motivo, usuarios(email)')
+      .select(
+        'id, canchasdep_id, fecha_empieza, fecha_termina, estado, code, motivo, precio_total, usuarios_id, usuarios(id, nombre, email)'
+      )
       .eq('canchasdep_id', courtId)
-      .in('estado', ['pendiente', 'pagada', 'bloqueada'])
       .gte('fecha_empieza', startUtc)
       .lt('fecha_empieza', endUtc)
+
+    if (usuarioId) {
+      // Filtrando por cliente, las únicas filas relevantes son sus reservas activas.
+      query = query.eq('usuarios_id', usuarioId).in('estado', ['pendiente', 'pagada'])
+    } else {
+      query = query.in('estado', ['pendiente', 'pagada', 'bloqueada'])
+    }
+
+    const { data, error } = await query
 
     if (error) throw new Error(`Error al obtener horarios bloqueados: ${error.message}`)
 
     // Mapear los campos de la BD a los nombres de propiedad que espera el calendario de la UI
     return (data || []).map(reserva => {
       const isManualBlock = reserva.estado === 'bloqueada'
+      const u = (reserva.usuarios as any) || null
       return {
         id: reserva.id,
         court_id: reserva.canchasdep_id,
@@ -131,7 +152,11 @@ export const schedulesService = {
             : 'Reserva Pendiente',
         state: isManualBlock ? 'bloqueada' : 'reservado',
         code: reserva.code || null,
-        user_email: (reserva.usuarios as any)?.email || ''
+        precio_total: (reserva as any).precio_total ?? null,
+        usuarios_id: reserva.usuarios_id ?? null,
+        user_nombre: u?.nombre || '',
+        user_email: u?.email || '',
+        estado_db: reserva.estado,
       }
     })
   },

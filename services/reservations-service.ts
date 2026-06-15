@@ -29,60 +29,40 @@ export const reservationsService = {
         ((filters?.page || 0) + 1) * (filters?.limit || 10) - 1
       )
 
-    console.log('[RESERVATIONS SERVICE] Reservas query error:', error)
-    console.log('[RESERVATIONS SERVICE] Reservas retrieved:', reservas)
-
     if (error) throw new Error(`Error al obtener reservas: ${error.message}`)
-    if (!reservas || reservas.length === 0) {
-      console.log('[RESERVATIONS SERVICE] No reservas found, returning empty array')
-      return []
-    }
+    if (!reservas || reservas.length === 0) return []
 
     // Traer usuarios relacionados
     const usuarioIds = [...new Set(reservas.map((r: any) => r.usuarios_id))]
-    console.log('[RESERVATIONS SERVICE] Usuario IDs:', usuarioIds)
-    
     const { data: usuarios, error: usuariosError } = await supabaseAdmin
       .from('usuarios')
       .select('id, nombre, email, celular, dni, roles_id')
       .in('id', usuarioIds)
-
-    console.log('[RESERVATIONS SERVICE] Usuarios query error:', usuariosError)
-    console.log('[RESERVATIONS SERVICE] Usuarios retrieved:', usuarios)
+    if (usuariosError) console.error('[reservations] usuarios query failed:', usuariosError.message)
 
     // Traer canchas relacionadas
     const canchaIds = [...new Set(reservas.map((r: any) => r.canchasdep_id))]
-    console.log('[RESERVATIONS SERVICE] Cancha IDs:', canchaIds)
-    
     const { data: canchas, error: canchasError } = await supabaseAdmin
       .from('canchas_deportivas')
       .select('id, nombre, tipo_deporte, campus_id')
       .in('id', canchaIds)
-
-    console.log('[RESERVATIONS SERVICE] Canchas query error:', canchasError)
-    console.log('[RESERVATIONS SERVICE] Canchas retrieved:', canchas)
+    if (canchasError) console.error('[reservations] canchas query failed:', canchasError.message)
 
     // Traer campus relacionados
     const campusIds = canchas?.map((c: any) => c.campus_id) || []
     const uniqueCampusIds = [...new Set(campusIds)]
-    console.log('[RESERVATIONS SERVICE] Campus IDs:', uniqueCampusIds)
-    
     const { data: campus, error: campusError } = await supabaseAdmin
       .from('campus')
       .select('id, nombre, ubicacion')
       .in('id', uniqueCampusIds)
-
-    console.log('[RESERVATIONS SERVICE] Campus query error:', campusError)
-    console.log('[RESERVATIONS SERVICE] Campus retrieved:', campus)
+    if (campusError) console.error('[reservations] campus query failed:', campusError.message)
 
     // Traer pagos relacionados
     const { data: pagos, error: pagosError } = await supabaseAdmin
       .from('pagos')
       .select('id, reserva_id, monto, estado, metodo_pago, voucher_url, voucher_serie, voucher_correlativo, comprobante_yape_url')
       .in('reserva_id', reservas.map((r: any) => r.id))
-
-    console.log('[RESERVATIONS SERVICE] Pagos query error:', pagosError)
-    console.log('[RESERVATIONS SERVICE] Pagos retrieved:', pagos)
+    if (pagosError) console.error('[reservations] pagos query failed:', pagosError.message)
 
     // Traer reembolsos relacionados (visibilidad para procesar pagos devueltos)
     const { data: reembolsos } = await supabaseAdmin

@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/common/Button'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ClientSearchInput, ClientSearchValue } from '@/components/common/ClientSearchInput'
 
 interface ControlBarProps {
   selectedCampus: number | null
@@ -10,10 +11,12 @@ interface ControlBarProps {
   weekEnd: string
   campuses: Array<{ id: number; nombre: string }>
   courts: Array<{ id: number; nombre: string }>
+  selectedClient: ClientSearchValue | null
   onCampusChange: (campusId: number) => void
   onCourtChange: (courtId: number) => void
   onPrevWeek: () => void
   onNextWeek: () => void
+  onClientChange: (c: ClientSearchValue | null) => void
 }
 
 export function ControlBar({
@@ -23,10 +26,12 @@ export function ControlBar({
   weekEnd,
   campuses,
   courts,
+  selectedClient,
   onCampusChange,
   onCourtChange,
   onPrevWeek,
   onNextWeek,
+  onClientChange,
 }: ControlBarProps) {
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr)
@@ -51,7 +56,7 @@ export function ControlBar({
         <div className="text-xs text-gray-500">Semana actual</div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Campus</label>
           <select
@@ -83,6 +88,13 @@ export function ControlBar({
             ))}
           </select>
         </div>
+
+        <ClientSearchInput
+          label="Cliente (filtro opcional)"
+          value={selectedClient}
+          onChange={onClientChange}
+          placeholder="Nombre o correo…"
+        />
       </div>
     </div>
   )

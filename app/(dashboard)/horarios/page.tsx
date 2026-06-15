@@ -7,8 +7,10 @@ import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { ControlBar } from '@/components/horarios/ControlBar'
 import { WeeklyCalendar } from '@/components/horarios/WeeklyCalendar'
 import { BlockModal } from '@/components/horarios/BlockModal'
+import { ReservationDetailModal, type CalendarReservation } from '@/components/horarios/ReservationDetailModal'
 import { ConfirmModal } from '@/components/common/ConfirmModal'
 import { weekStartYMD, addDaysYMD, limaYMD, limaHour, limaMinutes } from '@/lib/lima-time'
+import type { ClientSearchValue } from '@/components/common/ClientSearchInput'
 
 interface Court {
   id: number
@@ -29,6 +31,11 @@ interface ScheduleBlock {
   reason?: string
   state: 'bloqueada' | 'reservado' | 'disponible'
   user_email?: string
+  user_nombre?: string
+  usuarios_id?: number | null
+  precio_total?: number | null
+  code?: string | null
+  estado_db?: 'pendiente' | 'pagada' | 'cancelada' | 'expirada' | 'bloqueada'
 }
 
 export default function HorariosPage() {
@@ -46,6 +53,8 @@ export default function HorariosPage() {
   const [editingBlock, setEditingBlock] = useState<ScheduleBlock | null>(null)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [pendingUnblockId, setPendingUnblockId] = useState<number | null>(null)
+  const [selectedClient, setSelectedClient] = useState<ClientSearchValue | null>(null)
+  const [viewingReservation, setViewingReservation] = useState<ScheduleBlock | null>(null)
 
   useEffect(() => {
     fetchCampuses()
@@ -61,7 +70,8 @@ export default function HorariosPage() {
     if (selectedCourt) {
       fetchSchedules()
     }
-  }, [selectedCourt, weekStart, weekEnd])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCourt, weekStart, weekEnd, selectedClient?.id])
 
   const fetchCampuses = async () => {
     try {
@@ -98,9 +108,14 @@ export default function HorariosPage() {
 
     setLoading(true)
     try {
-      const response = await fetch(
-        `/api/schedules?action=blocked&court_id=${selectedCourt}&week_start=${weekStart}&week_end=${weekEnd}`
-      )
+      const params = new URLSearchParams({
+        action: 'blocked',
+        court_id: String(selectedCourt),
+        week_start: weekStart,
+        week_end: weekEnd,
+      })
+      if (selectedClient?.id) params.set('usuarios_id', String(selectedClient.id))
+      const response = await fetch(`/api/schedules?${params.toString()}`)
       const result = await response.json()
       if (result.success) {
         setSchedules(result.data || [])
@@ -184,10 +199,12 @@ export default function HorariosPage() {
             weekEnd={weekEnd}
             campuses={campuses}
             courts={courts}
+            selectedClient={selectedClient}
             onCampusChange={setSelectedCampus}
             onCourtChange={setSelectedCourt}
             onPrevWeek={handlePrevWeek}
             onNextWeek={handleNextWeek}
+            onClientChange={setSelectedClient}
           />
 
           {error && <div className="p-4 bg-red-50 text-red-700 rounded-lg">{error}</div>}
@@ -203,6 +220,7 @@ export default function HorariosPage() {
               onCellClick={handleCellClick}
               onUnblock={handleUnblock}
               onEditBlock={handleEditBlock}
+              onViewReservation={(b) => setViewingReservation(b)}
             />
           )}
         </div>
@@ -239,6 +257,25 @@ export default function HorariosPage() {
             setEditingBlock(null)
             handleUnblock(id)
           }}
+        />
+      )}
+
+      {viewingReservation && viewingReservation.estado_db && viewingReservation.estado_db !== 'bloqueada' && (
+        <ReservationDetailModal
+          reservation={{
+            id: viewingReservation.id,
+            court_id: viewingReservation.court_id,
+            start_date: viewingReservation.start_date,
+            end_date: viewingReservation.end_date,
+            code: viewingReservation.code ?? null,
+            estado_db: viewingReservation.estado_db,
+            user_nombre: viewingReservation.user_nombre,
+            user_email: viewingReservation.user_email,
+            usuarios_id: viewingReservation.usuarios_id ?? null,
+            precio_total: viewingReservation.precio_total ?? null,
+          }}
+          canchaNombre={courts.find((c) => c.id === viewingReservation.court_id)?.nombre}
+          onClose={() => setViewingReservation(null)}
         />
       )}
 

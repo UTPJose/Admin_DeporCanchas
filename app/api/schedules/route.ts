@@ -37,7 +37,16 @@ export async function GET(request: NextRequest) {
             { status: 400 }
           )
         }
-        response = await schedulesService.getBlockedSchedules(cid, weekStart, weekEnd)
+        {
+          const userIdParam = searchParams.get('usuarios_id')
+          const userId = userIdParam ? parseInt(userIdParam, 10) : null
+          response = await schedulesService.getBlockedSchedules(
+            cid,
+            weekStart,
+            weekEnd,
+            Number.isFinite(userId) ? userId : null,
+          )
+        }
         break
 
       default:

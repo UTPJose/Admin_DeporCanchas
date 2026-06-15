@@ -12,6 +12,10 @@ interface ScheduleBlock {
   state: 'bloqueada' | 'reservado' | 'disponible'
   code?: string | null
   user_email?: string
+  user_nombre?: string
+  usuarios_id?: number | null
+  precio_total?: number | null
+  estado_db?: 'pendiente' | 'pagada' | 'cancelada' | 'expirada' | 'bloqueada'
 }
 
 interface WeeklyCalendarProps {
@@ -20,12 +24,13 @@ interface WeeklyCalendarProps {
   onCellClick: (date: string, startTime: string, endTime: string) => void
   onUnblock: (id: number) => void
   onEditBlock: (block: ScheduleBlock) => void
+  onViewReservation?: (block: ScheduleBlock) => void
 }
 
 const HOURS = Array.from({ length: 17 }, (_, i) => 6 + i) // 6 AM a 10 PM
 const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
 
-export function WeeklyCalendar({ weekStart, schedules, onCellClick, onUnblock, onEditBlock }: WeeklyCalendarProps) {
+export function WeeklyCalendar({ weekStart, schedules, onCellClick, onUnblock, onEditBlock, onViewReservation }: WeeklyCalendarProps) {
   // YMD (hora Lima) del día dayIndex (0 = lunes)
   const dayYMD = (dayIndex: number) => addDaysYMD(weekStart, dayIndex)
 
@@ -106,7 +111,11 @@ export function WeeklyCalendar({ weekStart, schedules, onCellClick, onUnblock, o
           <ScheduleCell
             schedule={schedule}
             onClick={() => {
-              if (schedule.state === 'bloqueada') onEditBlock(schedule)
+              if (schedule.state === 'bloqueada') {
+                onEditBlock(schedule)
+              } else if (schedule.state === 'reservado') {
+                onViewReservation?.(schedule)
+              }
             }}
             onUnblock={onUnblock}
           />

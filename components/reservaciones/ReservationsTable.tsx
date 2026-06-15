@@ -38,7 +38,12 @@ interface ReservationsTableProps {
   onMarkRefundProcessed?: (refundId: number) => Promise<void> | void
 }
 
-export function ReservationsTable({ data, loading, onCancel, onMarkRefundProcessed }: ReservationsTableProps) {
+export function ReservationsTable({
+  data,
+  loading,
+  onCancel,
+  onMarkRefundProcessed,
+}: ReservationsTableProps) {
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [isDetailOpen, setIsDetailOpen] = useState(false)
   const [page, setPage] = useState(1)

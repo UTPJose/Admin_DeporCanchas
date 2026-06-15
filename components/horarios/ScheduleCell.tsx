@@ -74,7 +74,11 @@ export function ScheduleCell({ schedule, onClick, onUnblock }: ScheduleCellProps
 
     // Si es reservado / ocupado por cliente
     return (
-      <div className="h-full w-full p-2 border-b border-r border-gray-200 bg-green-50/80 border-l-4 border-l-green-600 flex flex-col justify-start gap-0.5 text-left min-h-[64px] hover:bg-green-100/30 transition-colors select-none">
+      <div
+        onClick={onClick}
+        title="Ver detalle de la reserva"
+        className="h-full w-full p-2 border-b border-r border-gray-200 bg-green-50/80 border-l-4 border-l-green-600 flex flex-col justify-start gap-0.5 text-left min-h-[64px] hover:bg-green-100/60 transition-colors select-none cursor-pointer"
+      >
         <div className="flex items-center justify-between w-full gap-1">
           <span className="text-[10px] font-bold text-green-800 uppercase tracking-wider flex items-center gap-0.5 shrink-0">
             <Calendar className="w-3 h-3 text-green-700 shrink-0" />

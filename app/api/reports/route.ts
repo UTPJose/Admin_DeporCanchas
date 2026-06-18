@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { reportsService } from '@/services/reports-service'
+import { limaYMD, addDaysYMD, limaToUtcISO } from '@/lib/lima-time'
 
 /**
  * GET /api/reports/dashboard - Obtener estadísticas del dashboard
@@ -27,16 +28,17 @@ export async function GET(request: NextRequest) {
         let from = startDate
         let to = endDate
         if ((!from || !to) && period) {
-          const now = new Date()
-          // 'day' = solo hoy (desde 00:00 local); 'week' = 7 días; 'month' = 30 días.
+          // Calculamos rangos anclados a hora Lima para que `day` realmente
+          // signifique "hoy en Lima" y no "hoy en UTC del server".
+          const todayLima = limaYMD()
           if (period === 'day') {
-            const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-            from = startOfDay.toISOString()
-            to = now.toISOString()
+            from = limaToUtcISO(todayLima, '00:00:00')
+            to = limaToUtcISO(addDaysYMD(todayLima, 1), '00:00:00')
           } else {
             const days = period === 'month' ? 30 : 7
-            to = now.toISOString()
-            from = new Date(now.getTime() - days * 24 * 60 * 60 * 1000).toISOString()
+            const fromYmd = addDaysYMD(todayLima, -(days - 1))
+            from = limaToUtcISO(fromYmd, '00:00:00')
+            to = limaToUtcISO(addDaysYMD(todayLima, 1), '00:00:00')
           }
         }
         if (!from || !to) {

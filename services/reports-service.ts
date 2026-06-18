@@ -1,6 +1,6 @@
 import { supabaseAdmin as supabase } from '@/lib/supabase'
-import { DashboardStats } from '@/types/database'
-import { limaYMD } from '@/lib/lima-time'
+import { DashboardKPI, DashboardStats } from '@/types/database'
+import { limaYMD, addDaysYMD, weekStartYMD, limaToUtcISO } from '@/lib/lima-time'
 
 /**
  * Reports Service - Análisis y estadísticas
@@ -10,7 +10,10 @@ export interface RevenueReport {
   totalRevenue: number
   totalReservations: number
   averageReservation: number
-  variationPercentage: number
+  /** % vs período anterior de igual duración. `null` cuando no hay base de comparación. */
+  variationPercentage: number | null
+  /** true si el período anterior tuvo 0 ingresos (mostrar "Nuevo" en UI). */
+  previousEmpty: boolean
   byDeport: { deport: string; amount: number }[]
   byCourt: { cancha: string; amount: number }[]
   dailyData: { date: string; revenue: number }[]
@@ -66,13 +69,17 @@ export const reportsService = {
       .gte('fecha_empieza', prevFrom)
       .lt('fecha_empieza', prevTo)
     const prevRevenue = (prev || []).reduce((s, r) => s + (r.precio_total || 0), 0)
-    const variationPercentage = prevRevenue > 0 ? ((totalRevenue - prevRevenue) / prevRevenue) * 100 : 0
+    const previousEmpty = prevRevenue <= 0
+    const variationPercentage = previousEmpty
+      ? null
+      : ((totalRevenue - prevRevenue) / prevRevenue) * 100
 
     return {
       totalRevenue,
       totalReservations,
       averageReservation,
       variationPercentage,
+      previousEmpty,
       byDeport: Object.entries(byDeportMap).map(([deport, amount]) => ({ deport, amount })),
       byCourt: Object.entries(byCourtMap)
         .map(([cancha, amount]) => ({ cancha, amount }))
@@ -84,61 +91,116 @@ export const reportsService = {
   },
 
   /**
-   * Obtener estadísticas del dashboard
+   * Estadísticas del dashboard: comparación mes actual vs mes anterior.
+   *
+   * - Total usuarios: histórico acumulado (sin variación).
+   * - Usuarios mes: nuevos registros este mes (creado_en) vs mes anterior.
+   * - Reservas mes: reservas con estado='pagada' este mes (creado_en) vs mes anterior.
+   * - Ingresos mes: suma de precio_total de pagadas este mes vs mes anterior.
+   * - Pendientes actual: reservas en estado='pendiente' ahora.
+   * - Reservas por día: cantidad pagada por cada día de la semana corriente
+   *   (lunes-domingo en hora Lima), incluso días con 0 para que el chart
+   *   pinte la semana completa.
+   *
+   * Las % de variación usan el rango [inicio_mes_anterior, inicio_mes_actual).
+   * Cuando el período anterior es 0 se devuelve `previousEmpty=true` para que
+   * la UI muestre "Nuevo" en vez de un 0% engañoso.
    */
   async getDashboardStats(): Promise<DashboardStats> {
-    // Total usuarios
+    const todayLima = limaYMD()
+    const [yearStr, monthStr] = todayLima.split('-')
+    const year = Number(yearStr)
+    const month = Number(monthStr) // 1-12
+
+    // Rangos del mes actual y anterior (instantes UTC)
+    const startOfMonthYmd = `${yearStr}-${monthStr}-01`
+    const startOfMonthUtc = limaToUtcISO(startOfMonthYmd, '00:00:00')
+
+    const prevYear = month === 1 ? year - 1 : year
+    const prevMonth = month === 1 ? 12 : month - 1
+    const startOfPrevMonthYmd = `${prevYear}-${String(prevMonth).padStart(2, '0')}-01`
+    const startOfPrevMonthUtc = limaToUtcISO(startOfPrevMonthYmd, '00:00:00')
+
+    const buildKPI = (current: number, prev: number): DashboardKPI => {
+      const previousEmpty = prev <= 0
+      let variacion: number | null = null
+      if (!previousEmpty) variacion = ((current - prev) / prev) * 100
+      return { valor: current, variacion, previousEmpty }
+    }
+
+    // --- Total usuarios (histórico) ---
     const { count: totalUsuarios } = await supabase
       .from('usuarios')
       .select('*', { count: 'exact', head: true })
 
-    // Total reservas
-    const { count: totalReservas } = await supabase
-      .from('reservas')
+    // --- Usuarios nuevos este mes vs anterior ---
+    const { count: usuariosMesCount } = await supabase
+      .from('usuarios')
       .select('*', { count: 'exact', head: true })
+      .gte('creado_en', startOfMonthUtc)
+    const { count: usuariosMesPrevCount } = await supabase
+      .from('usuarios')
+      .select('*', { count: 'exact', head: true })
+      .gte('creado_en', startOfPrevMonthUtc)
+      .lt('creado_en', startOfMonthUtc)
 
-    // Total ingresos (reservas finalizadas)
-    const { data: reservasFinalizadas } = await supabase
+    // --- Reservas pagadas este mes vs anterior (por fecha_empieza) ---
+    const { data: reservasMesData } = await supabase
       .from('reservas')
       .select('precio_total')
       .eq('estado', 'pagada')
+      .gte('fecha_empieza', startOfMonthUtc)
+    const { data: reservasMesPrevData } = await supabase
+      .from('reservas')
+      .select('precio_total')
+      .eq('estado', 'pagada')
+      .gte('fecha_empieza', startOfPrevMonthUtc)
+      .lt('fecha_empieza', startOfMonthUtc)
 
-    const totalIngresos = (reservasFinalizadas || []).reduce((sum, r) => sum + r.precio_total, 0)
+    const reservasMesCount = (reservasMesData || []).length
+    const reservasMesPrevCount = (reservasMesPrevData || []).length
+    const ingresosMes = (reservasMesData || []).reduce((s, r) => s + (r.precio_total || 0), 0)
+    const ingresosMesPrev = (reservasMesPrevData || []).reduce((s, r) => s + (r.precio_total || 0), 0)
 
-    // Total pendientes (reservas pendientes + pagos pendientes)
-    const { count: reservasPendientes } = await supabase
+    // --- Pendientes actual ---
+    const { count: pendientes } = await supabase
       .from('reservas')
       .select('*', { count: 'exact', head: true })
       .eq('estado', 'pendiente')
 
-    // Reservas por día (últimos 7 días)
-    const today = new Date()
-    const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
+    // --- Reservas por día de la semana corriente (Lima) ---
+    const weekStart = weekStartYMD(todayLima) // lunes (YMD Lima)
+    const weekEndYmd = addDaysYMD(weekStart, 6)
+    const weekStartUtc = limaToUtcISO(weekStart, '00:00:00')
+    const weekEndUtc = limaToUtcISO(addDaysYMD(weekEndYmd, 1), '00:00:00')
 
-    const { data: reservasPorDia } = await supabase
+    const { data: reservasSemana } = await supabase
       .from('reservas')
       .select('fecha_empieza')
-      .gte('fecha_empieza', sevenDaysAgo.toISOString())
-      .lte('fecha_empieza', today.toISOString())
+      .eq('estado', 'pagada')
+      .gte('fecha_empieza', weekStartUtc)
+      .lt('fecha_empieza', weekEndUtc)
 
-    // Agrupar por día
-    const grouped: { [key: string]: number } = {}
-    ;(reservasPorDia || []).forEach((r) => {
-      const dia = new Date(r.fecha_empieza).toLocaleDateString('es-PE')
-      grouped[dia] = (grouped[dia] || 0) + 1
+    // Inicializar todos los días con 0 para que el chart pinte la semana entera
+    const dayLabels = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
+    const counts: Record<string, number> = {}
+    for (let i = 0; i < 7; i++) counts[addDaysYMD(weekStart, i)] = 0
+    ;(reservasSemana || []).forEach((r) => {
+      const dia = limaYMD(r.fecha_empieza)
+      if (dia in counts) counts[dia] += 1
     })
-
-    const reservasAgrupadas = Object.entries(grouped).map(([dia, cantidad]) => ({
-      dia,
-      cantidad,
-    }))
+    const reservasPorDia = Object.entries(counts)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([ymd, cantidad], idx) => ({ dia: dayLabels[idx], ymd, cantidad }))
+      .map(({ dia, cantidad }) => ({ dia, cantidad }))
 
     return {
       total_usuarios: totalUsuarios || 0,
-      total_reservas: totalReservas || 0,
-      total_ingresos: totalIngresos,
-      total_pendientes: (reservasPendientes || 0),
-      reservas_por_dia: reservasAgrupadas,
+      usuarios_mes: buildKPI(usuariosMesCount || 0, usuariosMesPrevCount || 0),
+      reservas_mes: buildKPI(reservasMesCount, reservasMesPrevCount),
+      ingresos_mes: buildKPI(ingresosMes, ingresosMesPrev),
+      pendientes_actual: pendientes || 0,
+      reservas_por_dia: reservasPorDia,
     }
   },
 

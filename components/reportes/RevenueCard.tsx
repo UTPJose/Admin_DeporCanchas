@@ -6,11 +6,12 @@ interface RevenueCardProps {
   label: string
   value: string
   icon: 'DollarSign' | 'TrendingUp' | 'Calendar' | 'BarChart3'
-  trend?: number
+  /** % de variación. `null` o `undefined` para no mostrar nada. */
+  trend?: number | null
   isPercentage?: boolean
 }
 
-export function RevenueCard({ label, value, icon, trend, isPercentage }: RevenueCardProps) {
+export function RevenueCard({ label, value, icon, trend }: RevenueCardProps) {
   const icons: Record<string, any> = {
     DollarSign,
     TrendingUp,
@@ -19,8 +20,9 @@ export function RevenueCard({ label, value, icon, trend, isPercentage }: Revenue
   }
 
   const Icon = icons[icon]
-  const trendColor = trend ? (trend > 0 ? 'text-green-600' : 'text-red-600') : undefined
-  const TrendIcon = trend && trend > 0 ? ArrowUp : trend && trend < 0 ? ArrowDown : null
+  const hasTrend = trend !== undefined && trend !== null && trend !== 0
+  const trendColor = hasTrend && trend! > 0 ? 'text-green-600' : hasTrend ? 'text-red-600' : undefined
+  const TrendIcon = hasTrend && trend! > 0 ? ArrowUp : hasTrend && trend! < 0 ? ArrowDown : null
 
   return (
     <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
@@ -28,10 +30,10 @@ export function RevenueCard({ label, value, icon, trend, isPercentage }: Revenue
         <div>
           <p className="text-sm text-gray-600 mb-1">{label}</p>
           <p className="text-2xl font-bold text-gray-900">{value}</p>
-          {trend !== undefined && trend !== 0 && (
+          {hasTrend && (
             <div className={`flex items-center gap-1 mt-2 text-sm font-medium ${trendColor}`}>
               {TrendIcon && <TrendIcon className="w-4 h-4" />}
-              <span>{Math.abs(trend).toFixed(1)}%</span>
+              <span>{Math.abs(trend!).toFixed(1)}%</span>
             </div>
           )}
         </div>

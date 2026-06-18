@@ -6,17 +6,15 @@ import { ReservationChart } from '@/components/dashboard/ReservationChart'
 import { RevenueChart } from '@/components/dashboard/RevenueChart'
 import { SportDistribution } from '@/components/dashboard/SportDistribution'
 import { EventsList } from '@/components/dashboard/EventsList'
+import type { DashboardKPI } from '@/types/database'
 
-interface DashboardStats {
+interface DashboardData {
   totalUsuarios: number
-  totalReservas: number
-  totalIngresos: number
-  pendientes: number
-}
-
-interface ReservationData {
-  day: string
-  reservas: number
+  usuariosMes: DashboardKPI
+  reservasMes: DashboardKPI
+  ingresosMes: DashboardKPI
+  pendientesActual: number
+  reservasPorDia: { day: string; reservas: number }[]
 }
 
 interface SportsData {
@@ -38,8 +36,7 @@ interface Event {
 }
 
 export default function DashboardPage() {
-  const [stats, setStats] = useState<DashboardStats | null>(null)
-  const [reservations, setReservations] = useState<ReservationData[]>([])
+  const [data, setData] = useState<DashboardData | null>(null)
   const [sports, setSports] = useState<SportsData[]>([])
   const [revenue, setRevenue] = useState<RevenueData[]>([])
   const [revenuePeriod, setRevenuePeriod] = useState<'day' | 'week' | 'month'>('week')
@@ -69,14 +66,21 @@ export default function DashboardPage() {
         const revenueData = await revenueRes.json()
         const eventsData = await eventsRes.json()
 
-        setStats({
-          totalUsuarios: statsData.data?.total_usuarios || 0,
-          totalReservas: statsData.data?.total_reservas || 0,
-          totalIngresos: statsData.data?.total_ingresos || 0,
-          pendientes: statsData.data?.total_pendientes || 0,
-        })
+        const s = statsData.data
+        if (s) {
+          setData({
+            totalUsuarios: s.total_usuarios ?? 0,
+            usuariosMes: s.usuarios_mes ?? { valor: 0, variacion: null, previousEmpty: true },
+            reservasMes: s.reservas_mes ?? { valor: 0, variacion: null, previousEmpty: true },
+            ingresosMes: s.ingresos_mes ?? { valor: 0, variacion: null, previousEmpty: true },
+            pendientesActual: s.pendientes_actual ?? 0,
+            reservasPorDia: (s.reservas_por_dia ?? []).map((d: { dia: string; cantidad: number }) => ({
+              day: d.dia,
+              reservas: d.cantidad,
+            })),
+          })
+        }
 
-        // by-deport devuelve { deporte, cantidad } → { name, value }
         setSports(
           (sportsData.data || []).map((item: any) => ({
             name: item.deporte ?? item.name ?? 'Otro',
@@ -84,7 +88,6 @@ export default function DashboardPage() {
           }))
         )
 
-        // type=revenue ahora devuelve un objeto; el chart usa dailyData [{date, revenue}]
         const daily = revenueData.data?.dailyData ?? []
         if (Array.isArray(daily)) {
           setRevenue(
@@ -119,25 +122,10 @@ export default function DashboardPage() {
     return () => clearInterval(interval)
   }, [revenuePeriod])
 
-  const mockReservations: ReservationData[] = [
-    { day: 'Lun', reservas: 12 },
-    { day: 'Mar', reservas: 19 },
-    { day: 'Mié', reservas: 15 },
-    { day: 'Jue', reservas: 25 },
-    { day: 'Vie', reservas: 32 },
-    { day: 'Sáb', reservas: 28 },
-    { day: 'Dom', reservas: 18 },
-  ]
-
-  const mockRevenue: RevenueData[] = [
-    { date: '01 May', ingresos: 2400 },
-    { date: '02 May', ingresos: 3210 },
-    { date: '03 May', ingresos: 2290 },
-    { date: '04 May', ingresos: 2000 },
-    { date: '05 May', ingresos: 2181 },
-    { date: '06 May', ingresos: 2500 },
-    { date: '07 May', ingresos: 2100 },
-  ]
+  // KPIs por defecto cuando aún no llegó la data
+  const usuariosMes = data?.usuariosMes ?? { valor: 0, variacion: null, previousEmpty: false }
+  const reservasMes = data?.reservasMes ?? { valor: 0, variacion: null, previousEmpty: false }
+  const ingresosMes = data?.ingresosMes ?? { valor: 0, variacion: null, previousEmpty: false }
 
   return (
     <div className="space-y-6">
@@ -154,39 +142,51 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <KPICard
-          title="Total Usuarios"
-          value={stats?.totalUsuarios || 0}
+          title="Usuarios totales"
+          subtitle="Histórico"
+          value={data?.totalUsuarios ?? 0}
           icon="👥"
-          trend={12}
-          trendLabel="vs mes anterior"
+          trend={usuariosMes.variacion}
+          previousEmpty={usuariosMes.previousEmpty}
+          trendLabel={`nuevos este mes: ${usuariosMes.valor}`}
         />
         <KPICard
-          title="Total Reservas"
-          value={stats?.totalReservas || 0}
+          title="Reservas pagadas"
+          subtitle="Este mes"
+          value={reservasMes.valor}
           icon="📦"
-          trend={8}
+          trend={reservasMes.variacion}
+          previousEmpty={reservasMes.previousEmpty}
           trendLabel="vs mes anterior"
         />
         <KPICard
           title="Ingresos"
-          value={`S/ ${stats?.totalIngresos?.toLocaleString('es-PE') || '0'}`}
+          subtitle="Este mes"
+          value={`S/ ${ingresosMes.valor.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
           icon="💰"
-          trend={15}
+          trend={ingresosMes.variacion}
+          previousEmpty={ingresosMes.previousEmpty}
           trendLabel="vs mes anterior"
         />
-        <KPICard title="Pendientes" value={stats?.pendientes || 0} icon="⏳" trend={-5} trendLabel="vs mes anterior" />
+        <KPICard
+          title="Pendientes ahora"
+          subtitle="En tiempo real"
+          value={data?.pendientesActual ?? 0}
+          icon="⏳"
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ReservationChart data={reservations.length > 0 ? reservations : mockReservations} loading={loading} />
-        <SportDistribution data={sports.length > 0 ? sports : []} loading={loading} />
+        <ReservationChart data={data?.reservasPorDia ?? []} loading={loading} />
+        <SportDistribution data={sports} loading={loading} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
           <RevenueChart
-            data={revenue.length > 0 ? revenue : mockRevenue}
+            data={revenue}
             loading={loading}
+            period={revenuePeriod}
             onPeriodChange={setRevenuePeriod}
           />
         </div>
@@ -195,4 +195,3 @@ export default function DashboardPage() {
     </div>
   )
 }
-

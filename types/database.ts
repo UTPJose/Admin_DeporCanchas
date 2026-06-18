@@ -203,13 +203,28 @@ export interface CampusConDetalles extends Campus {
 
 // ==================== STATISTICS ====================
 
+/**
+ * Para cada KPI del dashboard tenemos:
+ *  - `valor` = métrica del mes actual.
+ *  - `variacion` = % vs mes anterior. `null` si no se puede comparar.
+ *  - `previousEmpty` = true cuando el mes anterior era 0 (mostrar "Nuevo").
+ */
+export interface DashboardKPI {
+  valor: number
+  variacion: number | null
+  previousEmpty: boolean
+}
+
 export interface DashboardStats {
+  // Histórico (totales acumulados, sin variación)
   total_usuarios: number
-  total_reservas: number
-  total_ingresos: number
-  total_pendientes: number
-  reservas_por_dia?: { dia: string; cantidad: number }[]
-  ingresos_por_periodo?: { periodo: string; monto: number }[]
+  // Mes actual con comparación contra mes anterior
+  usuarios_mes: DashboardKPI       // nuevos registros este mes
+  reservas_mes: DashboardKPI       // reservas pagadas este mes
+  ingresos_mes: DashboardKPI       // S/ recibidos este mes (precio_total de pagadas)
+  pendientes_actual: number        // reservas en estado 'pendiente' ahora
+  // Serie para el gráfico "Reservas por Día" (semana corriente, hora Lima)
+  reservas_por_dia: { dia: string; cantidad: number }[]
 }
 
 // ==================== QUERY FILTERS ====================

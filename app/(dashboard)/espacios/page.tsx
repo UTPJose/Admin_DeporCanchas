@@ -44,6 +44,8 @@ export default function EspaciosPage() {
   const [campusModalOpen, setCampusModalOpen] = useState(false)
   const [selectedCourt, setSelectedCourt] = useState<Court | null>(null)
   const [selectedCampus, setSelectedCampus] = useState<Campus | null>(null)
+  // Filtro del tab "Por Cancha": 'all' o id del campus
+  const [filterCampusId, setFilterCampusId] = useState<'all' | number>('all')
 
   const fetchData = async () => {
     try {
@@ -223,34 +225,89 @@ export default function EspaciosPage() {
 
       {tab === 'courts' && (
         <div className="space-y-4">
-          <button
-            onClick={handleAddCourt}
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors"
-          >
-            + Agregar Cancha
-          </button>
+          <div className="flex flex-wrap items-center gap-3 justify-between">
+            <button
+              onClick={handleAddCourt}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors"
+            >
+              + Agregar Cancha
+            </button>
 
-          {loading ? (
-            <div className="text-center py-8 text-gray-500">Cargando canchas...</div>
-          ) : courts.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">No hay canchas disponibles</div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {courts.map((court) => (
-                <CourtCard
-                  key={court.id}
-                  name={court.nombre}
-                  sport={etiquetaTipo(court.tipo_deporte)}
-                  campus={campuses.find((c) => c.id === court.campus_id)?.nombre || 'Unknown'}
-                  capacity={court.cantidad_jugadores}
-                  status={court.estado}
-                  image={court.imagen_url ?? undefined}
-                  onEdit={() => handleEditCourt(court)}
-                  onDelete={() => handleDeleteCourt(court.id)}
-                />
-              ))}
+            {/* Filtro por campus */}
+            <div className="flex items-center gap-2">
+              <label htmlFor="filter-campus" className="text-sm text-gray-600">
+                Campus:
+              </label>
+              <select
+                id="filter-campus"
+                value={filterCampusId === 'all' ? 'all' : String(filterCampusId)}
+                onChange={(e) =>
+                  setFilterCampusId(e.target.value === 'all' ? 'all' : parseInt(e.target.value, 10))
+                }
+                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
+              >
+                <option value="all">Todos ({courts.length})</option>
+                {campuses.map((c) => {
+                  const n = courts.filter((co) => co.campus_id === c.id).length
+                  return (
+                    <option key={c.id} value={c.id}>
+                      {c.nombre} ({n})
+                    </option>
+                  )
+                })}
+              </select>
+              {filterCampusId !== 'all' && (
+                <button
+                  type="button"
+                  onClick={() => setFilterCampusId('all')}
+                  className="text-xs text-gray-500 hover:text-gray-700 underline"
+                >
+                  limpiar
+                </button>
+              )}
             </div>
-          )}
+          </div>
+
+          {(() => {
+            const filtered =
+              filterCampusId === 'all'
+                ? courts
+                : courts.filter((c) => c.campus_id === filterCampusId)
+            if (loading) {
+              return <div className="text-center py-8 text-gray-500">Cargando canchas...</div>
+            }
+            if (courts.length === 0) {
+              return <div className="text-center py-8 text-gray-500">No hay canchas disponibles</div>
+            }
+            if (filtered.length === 0) {
+              return (
+                <div className="text-center py-8 text-gray-500">
+                  No hay canchas en{' '}
+                  <span className="font-semibold">
+                    {campuses.find((c) => c.id === filterCampusId)?.nombre ?? 'este campus'}
+                  </span>
+                  .
+                </div>
+              )
+            }
+            return (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filtered.map((court) => (
+                  <CourtCard
+                    key={court.id}
+                    name={court.nombre}
+                    sport={etiquetaTipo(court.tipo_deporte)}
+                    campus={campuses.find((c) => c.id === court.campus_id)?.nombre || 'Unknown'}
+                    capacity={court.cantidad_jugadores}
+                    status={court.estado}
+                    image={court.imagen_url ?? undefined}
+                    onEdit={() => handleEditCourt(court)}
+                    onDelete={() => handleDeleteCourt(court.id)}
+                  />
+                ))}
+              </div>
+            )
+          })()}
         </div>
       )}
 

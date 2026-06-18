@@ -13,7 +13,8 @@ interface ReportData {
   totalRevenue: number
   averageReservation: number
   totalReservations: number
-  variationPercentage: number
+  variationPercentage: number | null
+  previousEmpty: boolean
   byDeport: Array<{ deport: string; amount: number }>
   byCourt: Array<{ cancha: string; amount: number }>
   dailyData: Array<{ date: string; revenue: number }>
@@ -63,7 +64,11 @@ export default function ReportesPage() {
           reportData.totalRevenue.toFixed(2),
           reportData.averageReservation.toFixed(2),
           reportData.totalReservations,
-          reportData.variationPercentage.toFixed(1),
+          reportData.previousEmpty
+            ? 'Nuevo'
+            : reportData.variationPercentage != null
+              ? reportData.variationPercentage.toFixed(1)
+              : '—',
         ]
           .map(csvCell)
           .join(';')
@@ -137,7 +142,14 @@ export default function ReportesPage() {
         ['Ingresos Totales', `S/ ${reportData.totalRevenue.toFixed(2)}`],
         ['Promedio por Reserva', `S/ ${reportData.averageReservation.toFixed(2)}`],
         ['Total de Reservas', String(reportData.totalReservations)],
-        ['Variación', `${reportData.variationPercentage.toFixed(1)} %`],
+        [
+          'Variación',
+          reportData.previousEmpty
+            ? 'Nuevo'
+            : reportData.variationPercentage != null
+              ? `${reportData.variationPercentage.toFixed(1)} %`
+              : '—',
+        ],
       ]
       const cardW = (usableW - 6) / 2
       const cardH = 18
@@ -299,7 +311,8 @@ export default function ReportesPage() {
           totalRevenue: result.data.totalRevenue || 0,
           averageReservation: result.data.averageReservation || 0,
           totalReservations: result.data.totalReservations || 0,
-          variationPercentage: result.data.variationPercentage || 0,
+          variationPercentage: result.data.variationPercentage ?? null,
+          previousEmpty: result.data.previousEmpty ?? true,
           byDeport: result.data.byDeport || [],
           byCourt: result.data.byCourt || [],
           dailyData: result.data.dailyData || [],
@@ -367,7 +380,7 @@ export default function ReportesPage() {
               label="Ingresos Totales"
               value={`S/ ${reportData.totalRevenue.toFixed(2)}`}
               icon="DollarSign"
-              trend={reportData.variationPercentage}
+              trend={reportData.previousEmpty ? null : reportData.variationPercentage}
             />
             <RevenueCard
               label="Promedio por Reserva"
@@ -381,20 +394,32 @@ export default function ReportesPage() {
             />
             <RevenueCard
               label="Variación"
-              value={`${reportData.variationPercentage.toFixed(1)}%`}
+              value={
+                reportData.previousEmpty
+                  ? 'Nuevo'
+                  : reportData.variationPercentage != null
+                    ? `${reportData.variationPercentage.toFixed(1)}%`
+                    : '—'
+              }
               icon="BarChart3"
-              isPercentage
+              isPercentage={!reportData.previousEmpty && reportData.variationPercentage != null}
             />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <Card className="lg:col-span-2">
-              <h2 className="text-lg font-bold text-gray-900 mb-4">Ingresos por Día</h2>
+              <div className="flex items-baseline justify-between mb-4">
+                <h2 className="text-lg font-bold text-gray-900">Ingresos por Día</h2>
+                <span className="text-xs text-gray-400 uppercase tracking-wide">S/ Soles</span>
+              </div>
               <RevenueChart data={reportData.dailyData} />
             </Card>
 
             <Card>
-              <h2 className="text-lg font-bold text-gray-900 mb-4">Por Deporte</h2>
+              <div className="flex items-baseline justify-between mb-4">
+                <h2 className="text-lg font-bold text-gray-900">Ingresos por Deporte</h2>
+                <span className="text-xs text-gray-400 uppercase tracking-wide">S/ Soles</span>
+              </div>
               <DistributionChart data={reportData.byDeport} />
             </Card>
           </div>

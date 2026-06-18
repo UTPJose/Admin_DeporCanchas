@@ -168,138 +168,166 @@ export function CourtModal({
 
   if (!isOpen) return null
 
+  const isEdit = !!initialData?.id
+  const titulo = isEdit ? 'Editar Cancha' : 'Nueva Cancha'
+  const inputCls =
+    'w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600 text-sm'
+
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">
-          {initialData?.id ? 'Editar Cancha' : 'Nueva Cancha'}
-        </h2>
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      {/* Caja: ancho responsivo (md vs lg) + max-h con scroll interno para no
+          desbordar en pantallas pequeñas o cuando hay zoom; header y footer
+          quedan visibles arriba/abajo gracias al layout flex column. */}
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-md md:max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+        {/* Header sticky */}
+        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between shrink-0">
+          <h2 className="text-xl font-bold text-gray-900">{titulo}</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Cerrar"
+            className="p-1 rounded hover:bg-gray-100 text-gray-500 hover:text-gray-700 text-2xl leading-none"
+          >
+            ×
+          </button>
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Campus</label>
-            <select
-              value={formData.campus_id}
-              onChange={(e) => setFormData({ ...formData, campus_id: parseInt(e.target.value) })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600"
-            >
-              {campuses.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nombre}
-                </option>
-              ))}
-            </select>
-          </div>
+        {/* Body scrollable */}
+        <form
+          id="court-form"
+          onSubmit={handleSubmit}
+          className="px-6 py-5 overflow-y-auto flex-1 space-y-4"
+        >
+          {/* En md+ ponemos campos en 2 columnas para que el modal no quede como tira. */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Campus</label>
+              <select
+                value={formData.campus_id}
+                onChange={(e) => setFormData({ ...formData, campus_id: parseInt(e.target.value) })}
+                className={inputCls}
+              >
+                {campuses.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.nombre}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
-            <input
-              type="text"
-              value={formData.nombre}
-              onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600"
-              placeholder="Ej: Cancha 1"
-              required
-              minLength={2}
-              maxLength={80}
-            />
-          </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+              <input
+                type="text"
+                value={formData.nombre}
+                onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                className={inputCls}
+                placeholder="Ej: Cancha 1"
+                required
+                minLength={2}
+                maxLength={80}
+              />
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de cancha</label>
-            <select
-              value={formData.tipo_deporte}
-              onChange={(e) => setFormData({ ...formData, tipo_deporte: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600"
-            >
-              {/* Si la cancha tiene un tipo que ya no está activo, lo mostramos igual */}
-              {formData.tipo_deporte && !tipos.some((t) => t.valor === formData.tipo_deporte) && (
-                <option value={formData.tipo_deporte}>{formData.tipo_deporte}</option>
-              )}
-              {tipos.map((t) => (
-                <option key={t.valor} value={t.valor}>{t.etiqueta}</option>
-              ))}
-            </select>
-          </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de cancha</label>
+              <select
+                value={formData.tipo_deporte}
+                onChange={(e) => setFormData({ ...formData, tipo_deporte: e.target.value })}
+                className={inputCls}
+              >
+                {/* Si la cancha tiene un tipo que ya no está activo, lo mostramos igual */}
+                {formData.tipo_deporte && !tipos.some((t) => t.valor === formData.tipo_deporte) && (
+                  <option value={formData.tipo_deporte}>{formData.tipo_deporte}</option>
+                )}
+                {tipos.map((t) => (
+                  <option key={t.valor} value={t.valor}>{t.etiqueta}</option>
+                ))}
+              </select>
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Jugadores</label>
-            <input
-              type="number"
-              value={formData.cantidad_jugadores}
-              onChange={(e) => setFormData({ ...formData, cantidad_jugadores: parseInt(e.target.value) || 0 })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600"
-              min={1}
-              max={50}
-              step={1}
-              required
-            />
-          </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Jugadores</label>
+              <input
+                type="number"
+                value={formData.cantidad_jugadores}
+                onChange={(e) => setFormData({ ...formData, cantidad_jugadores: parseInt(e.target.value) || 0 })}
+                className={inputCls}
+                min={1}
+                max={50}
+                step={1}
+                required
+              />
+            </div>
 
-          <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Hora abre</label>
               <input
                 type="time"
                 value={formData.hora_abre ?? '08:00'}
                 onChange={(e) => setFormData({ ...formData, hora_abre: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600"
+                className={inputCls}
                 required
               />
             </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Hora cierra</label>
               <input
                 type="time"
                 value={formData.hora_cierra ?? '22:00'}
                 onChange={(e) => setFormData({ ...formData, hora_cierra: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600"
+                className={inputCls}
                 required
               />
             </div>
-          </div>
-          <p className="-mt-2 text-xs text-gray-500">
-            Se aplica a los 7 días de la semana.
-          </p>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Precio default (S/ por hora)</label>
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              value={
-                formData.precio_default === null || formData.precio_default === undefined || Number.isNaN(formData.precio_default)
-                  ? ''
-                  : formData.precio_default
-              }
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  precio_default: e.target.value === '' ? null : parseFloat(e.target.value),
-                })
-              }
-              placeholder="100.00"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Se usa cuando ninguna regla de Precios aplica. Editable luego en Precios.
-            </p>
-          </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Precio default (S/ por hora)
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={
+                  formData.precio_default === null ||
+                  formData.precio_default === undefined ||
+                  Number.isNaN(formData.precio_default)
+                    ? ''
+                    : formData.precio_default
+                }
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    precio_default: e.target.value === '' ? null : parseFloat(e.target.value),
+                  })
+                }
+                placeholder="100.00"
+                className={inputCls}
+              />
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
-            <select
-              value={formData.estado}
-              onChange={(e) => setFormData({ ...formData, estado: e.target.value as any })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600"
-            >
-              <option value="activo">Activa</option>
-              <option value="mantenimiento">Mantenimiento</option>
-              <option value="inactivo">Inactiva</option>
-            </select>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+              <select
+                value={formData.estado}
+                onChange={(e) => setFormData({ ...formData, estado: e.target.value as any })}
+                className={inputCls}
+              >
+                <option value="activo">Activa</option>
+                <option value="mantenimiento">Mantenimiento</option>
+                <option value="inactivo">Inactiva</option>
+              </select>
+            </div>
           </div>
 
+          <div className="text-xs text-gray-500 space-y-0.5">
+            <p>· El horario se aplica a los 7 días de la semana.</p>
+            <p>· El precio default se usa cuando ninguna regla de Precios aplica.</p>
+          </div>
+
+          {/* Imagen: a ancho completo, fuera del grid 2-col */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Imagen</label>
             {formData.imagen_url ? (
@@ -308,7 +336,7 @@ export function CourtModal({
                 <img
                   src={formData.imagen_url}
                   alt="Cancha"
-                  className="w-20 h-20 object-cover rounded-lg border border-gray-200"
+                  className="w-24 h-24 object-cover rounded-lg border border-gray-200"
                 />
                 <button
                   type="button"
@@ -330,25 +358,31 @@ export function CourtModal({
             {uploading && <p className="text-xs text-gray-500 mt-1">Subiendo imagen...</p>}
           </div>
 
-          {error && <p className="text-red-600 text-sm">{error}</p>}
-
-          <div className="flex gap-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={loading || uploading || submitting}
-              className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors disabled:opacity-50"
-            >
-              {submitting || loading ? 'Guardando...' : 'Guardar'}
-            </button>
-          </div>
+          {error && (
+            <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">
+              {error}
+            </div>
+          )}
         </form>
+
+        {/* Footer sticky con botones */}
+        <div className="px-6 py-4 border-t border-gray-200 flex gap-3 shrink-0 bg-gray-50">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 bg-white rounded-lg hover:bg-gray-50 font-medium transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            form="court-form"
+            disabled={loading || uploading || submitting}
+            className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors disabled:opacity-50"
+          >
+            {submitting || loading ? 'Guardando...' : 'Guardar'}
+          </button>
+        </div>
       </div>
     </div>
   )

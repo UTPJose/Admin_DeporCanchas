@@ -15,7 +15,7 @@ const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444']
 export function SportDistribution({ data, loading }: SportDistributionProps) {
   if (loading) {
     return (
-      <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100 h-80 flex items-center justify-center">
+      <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100 min-h-[380px] flex items-center justify-center">
         <div className="text-gray-400">Cargando datos...</div>
       </div>
     )
@@ -26,7 +26,7 @@ export function SportDistribution({ data, loading }: SportDistributionProps) {
   return (
     <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
       <div className="flex items-baseline justify-between mb-1">
-        <h3 className="text-lg font-semibold text-gray-900">Reservas por Deporte</h3>
+        <h2 className="text-lg font-semibold text-gray-900">Reservas por Deporte</h2>
         <span className="text-xs text-gray-400 uppercase tracking-wide">Cantidad</span>
       </div>
       <p className="text-xs text-gray-500 mb-4">Reservas pagadas y pendientes · Total: {total}</p>

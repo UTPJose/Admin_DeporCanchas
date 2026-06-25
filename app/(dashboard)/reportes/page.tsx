@@ -5,9 +5,17 @@ import { Card } from '@/components/common/Card'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { ReportsFilterBar } from '@/components/reportes/ReportsFilterBar'
 import { RevenueCard } from '@/components/reportes/RevenueCard'
-import { RevenueChart } from '@/components/reportes/RevenueChart'
-import { DistributionChart } from '@/components/reportes/DistributionChart'
+import dynamic from 'next/dynamic'
 import { Download, FileText } from 'lucide-react'
+
+const RevenueChart = dynamic(
+  () => import('@/components/reportes/RevenueChart').then((m) => ({ default: m.RevenueChart })),
+  { ssr: false }
+)
+const DistributionChart = dynamic(
+  () => import('@/components/reportes/DistributionChart').then((m) => ({ default: m.DistributionChart })),
+  { ssr: false }
+)
 
 interface ReportData {
   totalRevenue: number

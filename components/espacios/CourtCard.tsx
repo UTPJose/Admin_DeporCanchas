@@ -1,5 +1,7 @@
 'use client'
 
+import Image from 'next/image'
+
 export type CourtEstado = 'activo' | 'mantenimiento' | 'inactivo'
 
 interface CourtCardProps {
@@ -9,6 +11,7 @@ interface CourtCardProps {
   capacity: number
   status: CourtEstado
   image?: string
+  priority?: boolean
   onEdit: () => void
   onDelete: () => void
 }
@@ -25,19 +28,27 @@ const statusLabels: Record<CourtEstado, string> = {
   inactivo: 'Inactiva',
 }
 
-export function CourtCard({ name, sport, campus, capacity, status, image, onEdit, onDelete }: CourtCardProps) {
+export function CourtCard({ name, sport, campus, capacity, status, image, priority = false, onEdit, onDelete }: CourtCardProps) {
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
       {image ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={image} alt={name} className="h-40 w-full object-cover" />
+        <div className="relative h-40">
+          <Image
+            src={image}
+            alt={name}
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            priority={priority}
+          />
+        </div>
       ) : (
         <div className="h-40 bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-6xl">
           🏐
         </div>
       )}
       <div className="p-4">
-        <h3 className="text-lg font-semibold text-gray-900">{name}</h3>
+        <h2 className="text-lg font-semibold text-gray-900">{name}</h2>
         <p className="text-sm text-gray-600 mt-1">{campus}</p>
 
         <div className="mt-3 flex items-center gap-4 text-sm">

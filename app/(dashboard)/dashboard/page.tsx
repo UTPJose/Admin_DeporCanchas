@@ -1,12 +1,23 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import dynamic from 'next/dynamic'
 import { KPICard } from '@/components/dashboard/KPICard'
-import { ReservationChart } from '@/components/dashboard/ReservationChart'
-import { RevenueChart } from '@/components/dashboard/RevenueChart'
-import { SportDistribution } from '@/components/dashboard/SportDistribution'
 import { EventsList } from '@/components/dashboard/EventsList'
 import type { DashboardKPI } from '@/types/database'
+
+const ReservationChart = dynamic(
+  () => import('@/components/dashboard/ReservationChart').then((m) => ({ default: m.ReservationChart })),
+  { ssr: false }
+)
+const RevenueChart = dynamic(
+  () => import('@/components/dashboard/RevenueChart').then((m) => ({ default: m.RevenueChart })),
+  { ssr: false }
+)
+const SportDistribution = dynamic(
+  () => import('@/components/dashboard/SportDistribution').then((m) => ({ default: m.SportDistribution })),
+  { ssr: false }
+)
 
 interface DashboardData {
   totalUsuarios: number

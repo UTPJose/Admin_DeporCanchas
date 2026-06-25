@@ -292,7 +292,7 @@ export default function EspaciosPage() {
             }
             return (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filtered.map((court) => (
+                {filtered.map((court, index) => (
                   <CourtCard
                     key={court.id}
                     name={court.nombre}
@@ -301,6 +301,7 @@ export default function EspaciosPage() {
                     capacity={court.cantidad_jugadores}
                     status={court.estado}
                     image={court.imagen_url ?? undefined}
+                    priority={index === 0}
                     onEdit={() => handleEditCourt(court)}
                     onDelete={() => handleDeleteCourt(court.id)}
                   />

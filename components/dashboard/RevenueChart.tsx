@@ -22,7 +22,7 @@ const LABEL: Record<RevenueChartProps['period'], string> = {
 export function RevenueChart({ data, loading, period, onPeriodChange }: RevenueChartProps) {
   if (loading) {
     return (
-      <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100 h-80 flex items-center justify-center">
+      <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100 min-h-[380px] flex items-center justify-center">
         <div className="text-gray-400">Cargando datos...</div>
       </div>
     )
@@ -31,9 +31,9 @@ export function RevenueChart({ data, loading, period, onPeriodChange }: RevenueC
   return (
     <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">
+        <h2 className="text-lg font-semibold text-gray-900">
           Ingresos <span className="text-sm font-normal text-gray-500">({LABEL[period]})</span>
-        </h3>
+        </h2>
         <div className="flex gap-2">
           {(['day', 'week', 'month'] as const).map((p) => (
             <button

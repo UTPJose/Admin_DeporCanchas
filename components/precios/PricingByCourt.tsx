@@ -88,13 +88,14 @@ export function PricingByCourt({ courts, onRefresh }: { courts: Court[]; onRefre
       {/* Columna izquierda: selección + resumen */}
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Cancha</label>
+          <label htmlFor="pricing-court-select" className="block text-sm font-medium text-gray-700 mb-2">Cancha</label>
           {courts.length === 0 ? (
             <div className="w-full border border-dashed border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-500 bg-gray-50">
               Sin registrar
             </div>
           ) : (
             <select
+              id="pricing-court-select"
               value={selectedCourt ?? ''}
               onChange={(e) => setSelectedCourt(parseInt(e.target.value))}
               className="w-full border border-gray-300 rounded-lg px-3 py-2"
@@ -107,7 +108,7 @@ export function PricingByCourt({ courts, onRefresh }: { courts: Court[]; onRefre
         </div>
 
         <div className="bg-gray-50 rounded-lg p-4">
-          <h3 className="text-sm font-semibold text-gray-700 mb-3">Resumen</h3>
+          <h2 className="text-sm font-semibold text-gray-700 mb-3">Resumen</h2>
           <div className="flex justify-between text-sm py-1 border-b border-gray-200">
             <span className="text-gray-600">Precio Default</span>
             <span className="font-semibold">S/ {court?.precio_default != null ? court.precio_default.toFixed(2) : '—'}</span>
@@ -168,7 +169,7 @@ export function PricingByCourt({ courts, onRefresh }: { courts: Court[]; onRefre
         {/* Precio Default */}
         <div className="border border-gray-200 rounded-lg p-4">
           <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-gray-900">Precio Default</h3>
+            <h2 className="font-semibold text-gray-900">Precio Default</h2>
             {!editingDefault && (
               <button
                 onClick={() => {

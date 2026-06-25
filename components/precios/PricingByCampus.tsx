@@ -111,9 +111,9 @@ export function PricingByCampus({ courts, onRefresh }: { courts: Court[]; onRefr
 
         {/* Actualización masiva default */}
         <div className="border border-gray-200 rounded-lg p-5">
-          <h3 className="text-lg font-semibold text-gray-900 mb-3">Actualización Masiva Default</h3>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Nuevo precio default por hora</label>
-          <input type="number" min="0" step="0.01" value={defaultPrice} onChange={(e) => setDefaultPrice(e.target.value)}
+          <h2 className="text-lg font-semibold text-gray-900 mb-3">Actualización Masiva Default</h2>
+          <label htmlFor="pricing-campus-default-price" className="block text-sm font-medium text-gray-700 mb-1">Nuevo precio default por hora</label>
+          <input id="pricing-campus-default-price" type="number" min="0" step="0.01" value={defaultPrice} onChange={(e) => setDefaultPrice(e.target.value)}
             placeholder="100.00" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-3" />
           <button onClick={applyDefault} disabled={!selected.length || defaultPrice === ''}
             className="w-full py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:bg-gray-300">
@@ -123,22 +123,22 @@ export function PricingByCampus({ courts, onRefresh }: { courts: Court[]; onRefr
 
         {/* Inyección de configuración */}
         <div className="border border-gray-200 rounded-lg p-5 space-y-4">
-          <h3 className="text-lg font-semibold text-gray-900">Inyección de Configuración</h3>
+          <h2 className="text-lg font-semibold text-gray-900">Inyección de Configuración</h2>
           <div className="p-3 bg-amber-50 border border-amber-200 text-amber-900 rounded-lg text-xs">
             Las configuraciones aplicadas se copiarán como reglas independientes en cada cancha seleccionada (queda primera).
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de regla</label>
-            <select value={tipo} onChange={(e) => setTipo(e.target.value as RuleType)}
+            <label htmlFor="pricing-campus-tipo" className="block text-sm font-medium text-gray-700 mb-1">Tipo de regla</label>
+            <select id="pricing-campus-tipo" value={tipo} onChange={(e) => setTipo(e.target.value as RuleType)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
               {TIPOS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
             </select>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nombre (opcional)</label>
-            <input type="text" value={nombre} onChange={(e) => setNombre(e.target.value)}
+            <label htmlFor="pricing-campus-nombre" className="block text-sm font-medium text-gray-700 mb-1">Nombre (opcional)</label>
+            <input id="pricing-campus-nombre" type="text" value={nombre} onChange={(e) => setNombre(e.target.value)}
               placeholder="Ej: Semana de Navidad" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
           </div>
 
@@ -159,13 +159,13 @@ export function PricingByCampus({ courts, onRefresh }: { courts: Court[]; onRefr
           {tipo === 'dias_horas' && (
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Hora inicio</label>
-                <input type="time" value={horaIni} onChange={(e) => setHoraIni(e.target.value)}
+                <label htmlFor="pricing-campus-hora-ini" className="block text-sm font-medium text-gray-700 mb-1">Hora inicio</label>
+                <input id="pricing-campus-hora-ini" type="time" value={horaIni} onChange={(e) => setHoraIni(e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Hora fin</label>
-                <input type="time" value={horaFin} onChange={(e) => setHoraFin(e.target.value)}
+                <label htmlFor="pricing-campus-hora-fin" className="block text-sm font-medium text-gray-700 mb-1">Hora fin</label>
+                <input id="pricing-campus-hora-fin" type="time" value={horaFin} onChange={(e) => setHoraFin(e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
               </div>
             </div>
@@ -174,21 +174,21 @@ export function PricingByCampus({ courts, onRefresh }: { courts: Court[]; onRefr
           {tipo === 'fechas' && (
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Fecha inicio</label>
-                <input type="date" value={fechaIni} onChange={(e) => setFechaIni(e.target.value)}
+                <label htmlFor="pricing-campus-fecha-ini" className="block text-sm font-medium text-gray-700 mb-1">Fecha inicio</label>
+                <input id="pricing-campus-fecha-ini" type="date" value={fechaIni} onChange={(e) => setFechaIni(e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Fecha fin</label>
-                <input type="date" value={fechaFin} onChange={(e) => setFechaFin(e.target.value)}
+                <label htmlFor="pricing-campus-fecha-fin" className="block text-sm font-medium text-gray-700 mb-1">Fecha fin</label>
+                <input id="pricing-campus-fecha-fin" type="date" value={fechaFin} onChange={(e) => setFechaFin(e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
               </div>
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Precio por hora (S/)</label>
-            <input type="number" min="0" step="0.01" value={precio} onChange={(e) => setPrecio(e.target.value)}
+            <label htmlFor="pricing-campus-precio" className="block text-sm font-medium text-gray-700 mb-1">Precio por hora (S/)</label>
+            <input id="pricing-campus-precio" type="number" min="0" step="0.01" value={precio} onChange={(e) => setPrecio(e.target.value)}
               placeholder="120.00" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
           </div>
 

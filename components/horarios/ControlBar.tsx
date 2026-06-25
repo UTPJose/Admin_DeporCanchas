@@ -42,14 +42,14 @@ export function ControlBar({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <button onClick={onPrevWeek} className="p-2 hover:bg-gray-100 rounded-lg">
-            <ChevronLeft className="w-5 h-5" />
+          <button onClick={onPrevWeek} aria-label="Semana anterior" className="p-2 hover:bg-gray-100 rounded-lg">
+            <ChevronLeft className="w-5 h-5" aria-hidden="true" />
           </button>
           <span className="text-sm font-medium text-gray-600">
             {formatDate(weekStart)} - {formatDate(weekEnd)}
           </span>
-          <button onClick={onNextWeek} className="p-2 hover:bg-gray-100 rounded-lg">
-            <ChevronRight className="w-5 h-5" />
+          <button onClick={onNextWeek} aria-label="Semana siguiente" className="p-2 hover:bg-gray-100 rounded-lg">
+            <ChevronRight className="w-5 h-5" aria-hidden="true" />
           </button>
         </div>
 
@@ -58,8 +58,9 @@ export function ControlBar({
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Campus</label>
+          <label htmlFor="controlbar-campus" className="block text-sm font-medium text-gray-700 mb-2">Campus</label>
           <select
+            id="controlbar-campus"
             value={selectedCampus || ''}
             onChange={(e) => onCampusChange(parseInt(e.target.value))}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
@@ -74,8 +75,9 @@ export function ControlBar({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Cancha</label>
+          <label htmlFor="controlbar-cancha" className="block text-sm font-medium text-gray-700 mb-2">Cancha</label>
           <select
+            id="controlbar-cancha"
             value={selectedCourt || ''}
             onChange={(e) => onCourtChange(parseInt(e.target.value))}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"

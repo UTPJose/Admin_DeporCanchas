@@ -27,8 +27,9 @@ export function FilterBar({ campuses = [], onFilterChange }: FilterBarProps) {
     <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-3">
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">Código</label>
+          <label htmlFor="filter-code" className="block text-xs font-medium text-gray-700 mb-1">Código</label>
           <input
+            id="filter-code"
             type="text"
             placeholder="Ej: A1B2C3D4"
             onChange={(e) => handleChange('code', e.target.value.toUpperCase())}
@@ -37,8 +38,9 @@ export function FilterBar({ campuses = [], onFilterChange }: FilterBarProps) {
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">Desde</label>
+          <label htmlFor="filter-date-from" className="block text-xs font-medium text-gray-700 mb-1">Desde</label>
           <input
+            id="filter-date-from"
             type="date"
             onChange={(e) => handleChange('dateFrom', e.target.value)}
             className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-600"
@@ -46,8 +48,9 @@ export function FilterBar({ campuses = [], onFilterChange }: FilterBarProps) {
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">Hasta</label>
+          <label htmlFor="filter-date-to" className="block text-xs font-medium text-gray-700 mb-1">Hasta</label>
           <input
+            id="filter-date-to"
             type="date"
             onChange={(e) => handleChange('dateTo', e.target.value)}
             className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-600"
@@ -55,8 +58,9 @@ export function FilterBar({ campuses = [], onFilterChange }: FilterBarProps) {
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">Estado</label>
+          <label htmlFor="filter-status" className="block text-xs font-medium text-gray-700 mb-1">Estado</label>
           <select
+            id="filter-status"
             onChange={(e) => handleChange('status', e.target.value)}
             className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-600"
           >
@@ -70,8 +74,9 @@ export function FilterBar({ campuses = [], onFilterChange }: FilterBarProps) {
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">Campus</label>
+          <label htmlFor="filter-campus" className="block text-xs font-medium text-gray-700 mb-1">Campus</label>
           <select
+            id="filter-campus"
             onChange={(e) => handleChange('campus', e.target.value)}
             className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-600"
           >
@@ -83,8 +88,9 @@ export function FilterBar({ campuses = [], onFilterChange }: FilterBarProps) {
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">Email</label>
+          <label htmlFor="filter-email" className="block text-xs font-medium text-gray-700 mb-1">Email</label>
           <input
+            id="filter-email"
             type="email"
             placeholder="Email..."
             onChange={(e) => handleChange('email', e.target.value)}
@@ -93,8 +99,9 @@ export function FilterBar({ campuses = [], onFilterChange }: FilterBarProps) {
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">Precio</label>
+          <label htmlFor="filter-price" className="block text-xs font-medium text-gray-700 mb-1">Precio</label>
           <select
+            id="filter-price"
             onChange={(e) => handleChange('price', e.target.value)}
             className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-600"
           >

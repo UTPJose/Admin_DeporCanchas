@@ -37,8 +37,9 @@ export function ReportsFilterBar({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Inicio</label>
+          <label htmlFor="reports-start-date" className="block text-sm font-medium text-gray-700 mb-1">Fecha Inicio</label>
           <input
+            id="reports-start-date"
             type="date"
             value={startDate}
             onChange={(e) => onStartDateChange(e.target.value)}
@@ -46,8 +47,9 @@ export function ReportsFilterBar({
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Fin</label>
+          <label htmlFor="reports-end-date" className="block text-sm font-medium text-gray-700 mb-1">Fecha Fin</label>
           <input
+            id="reports-end-date"
             type="date"
             value={endDate}
             onChange={(e) => onEndDateChange(e.target.value)}

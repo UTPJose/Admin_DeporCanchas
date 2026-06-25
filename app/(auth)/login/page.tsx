@@ -65,7 +65,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-bg-light to-gray-100 flex items-center justify-center p-4">
+    <main className="min-h-screen bg-gradient-to-br from-bg-light to-gray-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
@@ -77,8 +77,9 @@ export default function LoginPage() {
         <Card className="shadow-md">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-text-dark mb-2">Email</label>
+              <label htmlFor="login-email" className="block text-sm font-medium text-text-dark mb-2">Email</label>
               <input
+                id="login-email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -89,9 +90,10 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-text-dark mb-2">Contraseña</label>
+              <label htmlFor="login-password" className="block text-sm font-medium text-text-dark mb-2">Contraseña</label>
               <div className="relative">
                 <input
+                  id="login-password"
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -102,7 +104,8 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-dark"
+                  aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-11 h-11 flex items-center justify-center text-text-secondary hover:text-text-dark"
                   disabled={isLoading}
                 >
                   {showPassword ? '👁️' : '👁️‍🗨️'}
@@ -122,7 +125,7 @@ export default function LoginPage() {
           © 2026 DeporCanchas. Todos los derechos reservados.
         </p>
       </div>
-    </div>
+    </main>
   )
 }
 

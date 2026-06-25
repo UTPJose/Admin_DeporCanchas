@@ -105,10 +105,10 @@ export function ScheduleCell({ schedule, onClick, onUnblock }: ScheduleCellProps
     <button
       type="button"
       onClick={onClick}
+      aria-label="Bloquear horario"
       className="h-16 w-full border-b border-r border-gray-200 bg-white hover:bg-green-50/30 transition-colors flex items-center justify-center group cursor-pointer"
-      title="Click para bloquear"
     >
-      <span className="text-xs text-gray-400 group-hover:text-green-600 font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
+      <span className="text-xs text-gray-400 group-hover:text-green-600 font-semibold opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden="true">
         + Bloquear
       </span>
     </button>

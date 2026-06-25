@@ -55,7 +55,7 @@ export default function NotificacionesPage() {
       <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
-            <Bell className="w-7 h-7" /> Notificaciones
+            <Bell className="w-7 h-7" aria-hidden="true" /> Notificaciones
           </h1>
           <p className="text-gray-600 mt-1">
             Reservas pagadas y canceladas por clientes.
@@ -63,9 +63,10 @@ export default function NotificacionesPage() {
         </div>
         <button
           onClick={() => { setOnlyUnread((v) => !v); setPage(1) }}
+          aria-label={onlyUnread ? 'Mostrar todas las notificaciones' : 'Mostrar solo notificaciones no leídas'}
           className="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
         >
-          {onlyUnread ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+          {onlyUnread ? <Eye className="w-4 h-4" aria-hidden="true" /> : <EyeOff className="w-4 h-4" aria-hidden="true" />}
           {onlyUnread ? 'Mostrar todas' : 'Solo no leídas'}
         </button>
       </div>

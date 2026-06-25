@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { useUser } from '@/hooks/useAuth'
+import { useAuth, useUser } from '@/hooks/useAuth'
 import { Bell, ChevronDown } from 'lucide-react'
 import { getInitials } from '@/utils/helpers'
 
@@ -38,12 +38,27 @@ function timeAgo(iso: string): string {
 
 export function Header() {
   const user = useUser()
+  const { logout } = useAuth()
   const [showNotifications, setShowNotifications] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [unread, setUnread] = useState(0)
   const [items, setItems] = useState<AdminNotif[]>([])
   const [loading, setLoading] = useState(false)
+  // Mientras se cierra sesión el botón queda deshabilitado para evitar
+  // múltiples requests al endpoint de logout.
+  const [loggingOut, setLoggingOut] = useState(false)
   const bellRef = useRef<HTMLDivElement>(null)
+
+  const handleLogout = async () => {
+    if (loggingOut) return
+    setLoggingOut(true)
+    try {
+      await logout()
+    } finally {
+      // Aunque logout() redirige, por si falla resetemos el flag.
+      setLoggingOut(false)
+    }
+  }
 
   // Refrescar conteo cada 30s
   useEffect(() => {
@@ -178,10 +193,11 @@ export function Header() {
                   Configuración
                 </a>
                 <button
-                  onClick={() => { window.location.href = '/login' }}
-                  className="w-full text-left px-4 py-2 text-sm text-danger hover:bg-red-50 rounded transition-colors"
+                  onClick={handleLogout}
+                  disabled={loggingOut}
+                  className="w-full text-left px-4 py-2 text-sm text-danger hover:bg-red-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Cerrar sesión
+                  {loggingOut ? 'Cerrando sesión…' : 'Cerrar sesión'}
                 </button>
               </div>
             </div>

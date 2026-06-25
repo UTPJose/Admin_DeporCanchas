@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
@@ -32,6 +33,18 @@ const iconMap: Record<string, React.ReactNode> = {
 export function Sidebar() {
   const pathname = usePathname()
   const { logout } = useAuth()
+  // Guard anti doble-click mientras se cierra sesión.
+  const [loggingOut, setLoggingOut] = useState(false)
+
+  const handleLogout = async () => {
+    if (loggingOut) return
+    setLoggingOut(true)
+    try {
+      await logout()
+    } finally {
+      setLoggingOut(false)
+    }
+  }
 
   return (
     <aside className="w-64 bg-white border-r border-border-color h-screen overflow-y-auto fixed left-0 top-0 shadow-sm">
@@ -65,14 +78,12 @@ export function Sidebar() {
       {/* Logout Button */}
       <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-border-color bg-white">
         <button
-          onClick={() => {
-            logout()
-            window.location.href = '/login'
-          }}
-          className="flex items-center gap-3 px-4 py-3 rounded-lg text-danger hover:bg-red-50 w-full transition-colors"
+          onClick={handleLogout}
+          disabled={loggingOut}
+          className="flex items-center gap-3 px-4 py-3 rounded-lg text-danger hover:bg-red-50 w-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <LogOut className="w-5 h-5" />
-          <span>Cerrar sesión</span>
+          <span>{loggingOut ? 'Cerrando sesión…' : 'Cerrar sesión'}</span>
         </button>
       </div>
     </aside>

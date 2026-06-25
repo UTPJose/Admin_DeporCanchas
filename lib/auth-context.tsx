@@ -51,9 +51,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
+  /**
+   * Cierre de sesión:
+   *  1) POST /api/auth/logout para que el server invalide la cookie httpOnly.
+   *  2) Limpia el user del contexto (la UI deja de mostrar el nombre).
+   *  3) Redirige a /login. Lo hace adentro del logout para que cualquier
+   *     consumidor (Header, Sidebar) tenga el mismo comportamiento sin
+   *     manejar el redirect a mano (lo cual provocaba race conditions: el
+   *     navegador cancelaba el fetch antes de borrar la cookie).
+   *
+   * Usar `window.location.assign` (no `.href = ...`) hace una navegación
+   * completa que descarta cualquier estado en memoria del cliente.
+   */
   const logout = useCallback(async () => {
-    await fetch('/api/auth/logout', { method: 'POST' }).catch(() => {})
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' })
+    } catch {
+      // Aunque falle el fetch, continuamos: la UI debe quedar deslogueada
+      // en cliente; el server cierra la sesión cuando la cookie expire.
+    }
     setUser(null)
+    if (typeof window !== 'undefined') {
+      window.location.assign('/login')
+    }
   }, [])
 
   useEffect(() => {

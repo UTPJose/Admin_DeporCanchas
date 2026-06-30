@@ -66,7 +66,7 @@ export default function PreciosPage() {
             <button
               onClick={() => setTab('court')}
               className={`px-4 py-2 rounded-lg font-medium text-sm ${
-                tab === 'court' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                tab === 'court' ? 'bg-green-700 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
               Por Cancha
@@ -74,7 +74,7 @@ export default function PreciosPage() {
             <button
               onClick={() => setTab('campus')}
               className={`px-4 py-2 rounded-lg font-medium text-sm ${
-                tab === 'campus' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                tab === 'campus' ? 'bg-green-700 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
               Por Campus
@@ -83,8 +83,9 @@ export default function PreciosPage() {
 
           {/* Selector de campus (compartido) */}
           <div className="max-w-xs">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Campus</label>
+            <label htmlFor="precios-campus" className="block text-sm font-medium text-gray-700 mb-2">Campus</label>
             <select
+              id="precios-campus"
               value={selectedCampus ?? ''}
               onChange={(e) => setSelectedCampus(parseInt(e.target.value))}
               className="w-full border border-gray-300 rounded-lg px-3 py-2"

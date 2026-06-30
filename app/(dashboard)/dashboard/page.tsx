@@ -6,17 +6,21 @@ import { KPICard } from '@/components/dashboard/KPICard'
 import { EventsList } from '@/components/dashboard/EventsList'
 import type { DashboardKPI } from '@/types/database'
 
+const ChartSkeleton = () => (
+  <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100 min-h-[380px]" />
+)
+
 const ReservationChart = dynamic(
   () => import('@/components/dashboard/ReservationChart').then((m) => ({ default: m.ReservationChart })),
-  { ssr: false }
+  { ssr: false, loading: ChartSkeleton }
 )
 const RevenueChart = dynamic(
   () => import('@/components/dashboard/RevenueChart').then((m) => ({ default: m.RevenueChart })),
-  { ssr: false }
+  { ssr: false, loading: ChartSkeleton }
 )
 const SportDistribution = dynamic(
   () => import('@/components/dashboard/SportDistribution').then((m) => ({ default: m.SportDistribution })),
-  { ssr: false }
+  { ssr: false, loading: ChartSkeleton }
 )
 
 interface DashboardData {

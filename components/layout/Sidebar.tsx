@@ -64,7 +64,7 @@ export function Sidebar() {
               href={item.href}
               className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                 isActive
-                  ? 'bg-primary-light text-primary font-medium'
+                  ? 'bg-primary-light text-green-800 font-medium'
                   : 'text-text-dark hover:bg-bg-light'
               }`}
             >

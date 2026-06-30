@@ -89,8 +89,8 @@ export function RuleModal({ courtId, rule, onClose, onSave }: RuleModalProps) {
       <div className="bg-white rounded-lg shadow-lg w-full max-w-md mx-4 p-6">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-bold text-gray-900">{rule ? 'Editar Configuración' : 'Nueva Configuración'}</h2>
-          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-lg">
-            <X className="w-5 h-5" />
+          <button onClick={onClose} aria-label="Cerrar" className="p-1 hover:bg-gray-100 rounded-lg">
+            <X className="w-5 h-5" aria-hidden="true" />
           </button>
         </div>
 
@@ -98,8 +98,9 @@ export function RuleModal({ courtId, rule, onClose, onSave }: RuleModalProps) {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+            <label htmlFor="rule-nombre" className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
             <input
+              id="rule-nombre"
               type="text"
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
@@ -109,8 +110,9 @@ export function RuleModal({ courtId, rule, onClose, onSave }: RuleModalProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de regla</label>
+            <label htmlFor="rule-tipo" className="block text-sm font-medium text-gray-700 mb-1">Tipo de regla</label>
             <select
+              id="rule-tipo"
               value={tipo}
               onChange={(e) => setTipo(e.target.value as RuleType)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
@@ -146,13 +148,13 @@ export function RuleModal({ courtId, rule, onClose, onSave }: RuleModalProps) {
           {tipo === 'dias_horas' && (
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Hora inicio</label>
-                <input type="time" value={horaIni} onChange={(e) => setHoraIni(e.target.value)}
+                <label htmlFor="rule-hora-ini" className="block text-sm font-medium text-gray-700 mb-1">Hora inicio</label>
+                <input id="rule-hora-ini" type="time" value={horaIni} onChange={(e) => setHoraIni(e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Hora fin</label>
-                <input type="time" value={horaFin} onChange={(e) => setHoraFin(e.target.value)}
+                <label htmlFor="rule-hora-fin" className="block text-sm font-medium text-gray-700 mb-1">Hora fin</label>
+                <input id="rule-hora-fin" type="time" value={horaFin} onChange={(e) => setHoraFin(e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
               </div>
             </div>
@@ -161,21 +163,21 @@ export function RuleModal({ courtId, rule, onClose, onSave }: RuleModalProps) {
           {tipo === 'fechas' && (
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Fecha inicio</label>
-                <input type="date" value={fechaIni} onChange={(e) => setFechaIni(e.target.value)}
+                <label htmlFor="rule-fecha-ini" className="block text-sm font-medium text-gray-700 mb-1">Fecha inicio</label>
+                <input id="rule-fecha-ini" type="date" value={fechaIni} onChange={(e) => setFechaIni(e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Fecha fin</label>
-                <input type="date" value={fechaFin} onChange={(e) => setFechaFin(e.target.value)}
+                <label htmlFor="rule-fecha-fin" className="block text-sm font-medium text-gray-700 mb-1">Fecha fin</label>
+                <input id="rule-fecha-fin" type="date" value={fechaFin} onChange={(e) => setFechaFin(e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
               </div>
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Precio por hora (S/)</label>
-            <input type="number" value={Number.isNaN(precio) ? '' : precio} min="0" step="0.01" required
+            <label htmlFor="rule-precio" className="block text-sm font-medium text-gray-700 mb-1">Precio por hora (S/)</label>
+            <input id="rule-precio" type="number" value={Number.isNaN(precio) ? '' : precio} min="0" step="0.01" required
               onChange={(e) => setPrecio(e.target.value === '' ? NaN : parseFloat(e.target.value))}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
           </div>

@@ -84,6 +84,7 @@ export default function NotificacionesPage() {
               <button
                 key={n.id}
                 onClick={() => setSelected(n)}
+                aria-label={n.titulo}
                 className={`w-full text-left px-4 py-3 hover:bg-gray-50 ${
                   !n.leido ? 'bg-green-50/40' : ''
                 }`}
@@ -96,7 +97,7 @@ export default function NotificacionesPage() {
                     </p>
                     <p className="text-xs text-gray-600 mt-1 truncate">{n.mensaje}</p>
                   </div>
-                  <span className="text-[11px] text-gray-400 whitespace-nowrap">
+                  <span className="text-[11px] text-gray-600 whitespace-nowrap">
                     {LIMA_FMT.format(new Date(n.creado_en))}
                   </span>
                 </div>

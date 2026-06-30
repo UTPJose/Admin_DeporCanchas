@@ -47,11 +47,11 @@ export function RuleCard({ rule, index, onEdit, onDelete, onDragStart, onDragOve
         <div className="flex items-center justify-between gap-2">
           <span className="text-sm font-semibold text-gray-900 truncate">{rule.nombre || 'Tarifa'}</span>
           <div className="flex gap-1 shrink-0">
-            <button onClick={onEdit} className="p-1.5 text-gray-500 hover:bg-gray-100 rounded" title="Editar">
-              <Edit2 className="w-4 h-4" />
+            <button onClick={onEdit} aria-label="Editar regla" className="p-1.5 text-gray-500 hover:bg-gray-100 rounded">
+              <Edit2 className="w-4 h-4" aria-hidden="true" />
             </button>
-            <button onClick={onDelete} className="p-1.5 text-red-600 hover:bg-red-50 rounded" title="Eliminar">
-              <Trash2 className="w-4 h-4" />
+            <button onClick={onDelete} aria-label="Eliminar regla" className="p-1.5 text-red-600 hover:bg-red-50 rounded">
+              <Trash2 className="w-4 h-4" aria-hidden="true" />
             </button>
           </div>
         </div>
@@ -86,7 +86,7 @@ export function RuleCard({ rule, index, onEdit, onDelete, onDragStart, onDragOve
         )}
 
         <p className="mt-2 text-green-700 font-bold">
-          S/ {rule.precio.toFixed(2)} <span className="text-xs font-normal text-gray-500">por hora</span>
+          S/ {rule.precio.toFixed(2)} <span className="text-xs font-normal text-gray-600">por hora</span>
         </p>
       </div>
     </div>

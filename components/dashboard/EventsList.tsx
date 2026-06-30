@@ -19,8 +19,8 @@ interface EventsListProps {
 export function EventsList({ events, loading, onViewAll }: EventsListProps) {
   if (loading) {
     return (
-      <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100 h-80 flex items-center justify-center">
-        <div className="text-gray-400">Cargando eventos...</div>
+      <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100 min-h-[320px] flex items-center justify-center">
+        <div className="text-gray-600">Cargando eventos...</div>
       </div>
     )
   }
@@ -43,7 +43,7 @@ export function EventsList({ events, loading, onViewAll }: EventsListProps) {
   return (
     <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">Últimos Eventos</h3>
+        <h2 className="text-lg font-semibold text-gray-900">Últimos Eventos</h2>
         {onViewAll && (
           <button
             onClick={onViewAll}
@@ -55,16 +55,16 @@ export function EventsList({ events, loading, onViewAll }: EventsListProps) {
       </div>
       <div className="space-y-3 max-h-80 overflow-y-auto">
         {events.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-4">No hay eventos disponibles</p>
+          <p className="text-sm text-gray-600 text-center py-4">No hay eventos disponibles</p>
         ) : (
           events.map((event) => (
             <div key={event.id} className="flex gap-3 pb-3 border-b border-gray-100 last:border-b-0">
               {event.icon && <div className="flex-shrink-0 text-lg">{event.icon}</div>}
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-900 truncate">{event.title}</p>
-                {event.description && <p className="text-xs text-gray-500 truncate">{event.description}</p>}
+                {event.description && <p className="text-xs text-gray-600 truncate">{event.description}</p>}
               </div>
-              <span className="text-xs text-gray-400 flex-shrink-0 whitespace-nowrap">{formatTime(event.timestamp)}</span>
+              <span className="text-xs text-gray-600 flex-shrink-0 whitespace-nowrap">{formatTime(event.timestamp)}</span>
             </div>
           ))
         )}

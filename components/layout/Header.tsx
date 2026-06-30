@@ -117,9 +117,10 @@ export function Header() {
         <div className="relative" ref={bellRef}>
           <button
             onClick={openBell}
+            aria-label="Ver notificaciones"
             className="relative p-2 text-text-secondary hover:bg-bg-light rounded-lg transition-colors"
           >
-            <Bell className="w-5 h-5" />
+            <Bell className="w-5 h-5" aria-hidden="true" />
             {unread > 0 && (
               <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-red-600 text-white text-[10px] font-bold rounded-full inline-flex items-center justify-center">
                 {unread > 99 ? '99+' : unread}
@@ -149,7 +150,7 @@ export function Header() {
                     <div key={n.id} className="px-4 py-3 border-b border-gray-100 last:border-0 hover:bg-gray-50">
                       <div className="flex items-start justify-between gap-2">
                         <p className="text-sm font-semibold text-gray-900">{n.titulo}</p>
-                        <span className="text-[10px] text-gray-400 whitespace-nowrap">{timeAgo(n.creado_en)}</span>
+                        <span className="text-[10px] text-gray-600 whitespace-nowrap">{timeAgo(n.creado_en)}</span>
                       </div>
                       <p className="text-xs text-gray-600 mt-1 leading-snug">{n.mensaje}</p>
                     </div>
@@ -169,7 +170,7 @@ export function Header() {
             }}
             className="flex items-center gap-2 p-2 hover:bg-bg-light rounded-lg transition-colors"
           >
-            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white text-xs font-bold">
+            <div className="w-8 h-8 bg-green-700 rounded-full flex items-center justify-center text-white text-xs font-bold">
               {initials}
             </div>
             <div className="text-left hidden md:block">

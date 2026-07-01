@@ -25,6 +25,9 @@ export default function ReservacionesPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [filters, setFilters] = useState<FilterValues>({ status: 'todas' })
+  const [refundModal, setRefundModal] = useState<Reservation | null>(null)
+  const [refundNota, setRefundNota] = useState('')
+  const [refundSubmitting, setRefundSubmitting] = useState(false)
 
   // Lista de campus para el selector del filtro
   useEffect(() => {
@@ -111,14 +114,29 @@ export default function ReservacionesPage() {
       }))
   }, [raw, filters.status, filters.campus, filters.price, filters.email, (filters as any).code])
 
-  const handleMarkRefundProcessed = async (refundId: number) => {
-    if (!confirm('¿Marcar este reembolso como procesado? (acción manual)')) return
+  const handleMarkRefundProcessed = (refundId: number) => {
+    const r = reservations.find((x) => x.reembolso?.id === refundId)
+    if (!r) return
+    setRefundNota('')
+    setRefundModal(r)
+  }
+
+  const confirmRefund = async () => {
+    if (!refundModal?.reembolso) return
+    setRefundSubmitting(true)
     try {
-      const res = await fetch(`/api/reembolsos/${refundId}/procesar`, { method: 'POST' })
+      const res = await fetch(`/api/reembolsos/${refundModal.reembolso.id}/procesar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nota: refundNota.trim() || undefined }),
+      })
       if (!res.ok) throw new Error('Error al marcar como procesado')
+      setRefundModal(null)
       fetchReservations()
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Error')
+    } finally {
+      setRefundSubmitting(false)
     }
   }
 
@@ -153,6 +171,62 @@ export default function ReservacionesPage() {
         onCancel={handleCancel}
         onMarkRefundProcessed={handleMarkRefundProcessed}
       />
+
+      {refundModal?.reembolso && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-1">Confirmar reembolso procesado</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Se marcará como procesado y se enviará un correo de confirmación al cliente.
+            </p>
+
+            <div className="bg-gray-50 rounded-lg p-3 mb-4 text-sm space-y-1">
+              <p><span className="text-gray-500">Cliente:</span> <span className="font-medium text-gray-900">{refundModal.usuario_nombre}</span></p>
+              <p><span className="text-gray-500">Correo:</span> <span className="font-medium text-gray-900">{refundModal.usuario_email}</span></p>
+              <p><span className="text-gray-500">Monto:</span> <span className="font-bold text-green-700">S/ {refundModal.reembolso.monto.toFixed(2)}</span> <span className="text-gray-500">({refundModal.reembolso.porcentaje}%)</span></p>
+              {refundModal.reembolso.metodo_destino && (
+                <p><span className="text-gray-500">Destino:</span> <span className="font-medium text-gray-900">
+                  {refundModal.reembolso.metodo_destino === 'tarjeta'
+                    ? refundModal.reembolso.destino_detalle
+                    : `Yape al ${refundModal.reembolso.destino_detalle ?? '—'}`}
+                </span></p>
+              )}
+            </div>
+
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Nota para el cliente <span className="text-gray-400 font-normal">(opcional)</span>
+            </label>
+            <textarea
+              value={refundNota}
+              onChange={(e) => setRefundNota(e.target.value.slice(0, 400))}
+              placeholder="Ej. Transferencia realizada el 01/07 vía BCP."
+              rows={3}
+              className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+              disabled={refundSubmitting}
+            />
+            <p className="text-xs text-gray-400 mt-1">{refundNota.length}/400</p>
+
+            <div className="flex justify-end gap-2 mt-4">
+              <button
+                type="button"
+                onClick={() => setRefundModal(null)}
+                disabled={refundSubmitting}
+                className="px-4 py-2 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 rounded disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={confirmRefund}
+                disabled={refundSubmitting}
+                className="px-4 py-2 text-sm text-white bg-green-600 hover:bg-green-700 rounded disabled:opacity-50"
+              >
+                {refundSubmitting ? 'Enviando…' : 'Confirmar y notificar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

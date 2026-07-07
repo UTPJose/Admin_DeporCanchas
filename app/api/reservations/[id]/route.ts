@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { reservationsService } from '@/services/reservations-service'
+import { requireAdmin, UnauthorizedError, unauthorizedResponse } from '@/lib/auth/requireAdmin'
 
 /**
  * GET /api/reservations/[id] - Obtener reserva por ID
- * PUT /api/reservations/[id] - Actualizar reserva
- * DELETE /api/reservations/[id] - Cancelar reserva
+ * PATCH /api/reservations/[id] - Cancelar reserva (única acción admin sobre una reserva existente)
  */
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    await requireAdmin()
     const { id } = await params
     const parsedId = parseInt(id, 10)
     const reservation = await reservationsService.getReservationById(parsedId)
@@ -22,6 +23,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       data: reservation,
     })
   } catch (error) {
+    if (error instanceof UnauthorizedError) return unauthorizedResponse()
     console.error('Error fetching reservation:', error)
     return NextResponse.json(
       {
@@ -33,32 +35,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = await params
-    const parsedId = parseInt(id, 10)
-    const body = await request.json()
-
-    const updatedReservation = await reservationsService.updateReservation(parsedId, body)
-
-    return NextResponse.json({
-      success: true,
-      data: updatedReservation,
-    })
-  } catch (error) {
-    console.error('Error updating reservation:', error)
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Error al actualizar reserva',
-      },
-      { status: 500 }
-    )
-  }
-}
-
-export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try {
+    await requireAdmin()
     const { id } = await params
     const parsedId = parseInt(id, 10)
 
@@ -70,6 +49,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       message: 'Reserva cancelada exitosamente',
     })
   } catch (error) {
+    if (error instanceof UnauthorizedError) return unauthorizedResponse()
     console.error('Error cancelling reservation:', error)
     return NextResponse.json(
       {

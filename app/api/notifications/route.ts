@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { notificationsService } from '@/services/notifications-service'
+import { requireAdmin, UnauthorizedError, unauthorizedResponse } from '@/lib/auth/requireAdmin'
 
 /**
  * GET /api/notifications - Obtener notificaciones de un usuario
@@ -8,6 +9,7 @@ import { notificationsService } from '@/services/notifications-service'
 
 export async function GET(request: NextRequest) {
   try {
+    await requireAdmin()
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('user_id')
     const type = searchParams.get('type') || 'all'
@@ -54,6 +56,7 @@ export async function GET(request: NextRequest) {
       data: notifications,
     })
   } catch (error) {
+    if (error instanceof UnauthorizedError) return unauthorizedResponse()
     console.error('Error fetching notifications:', error)
     return NextResponse.json(
       {
@@ -67,6 +70,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    await requireAdmin()
     const body = await request.json()
 
     if (!body.usuarios_id || !body.tipo || !body.titulo || !body.mensaje) {
@@ -95,6 +99,7 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     )
   } catch (error) {
+    if (error instanceof UnauthorizedError) return unauthorizedResponse()
     console.error('Error creating notification:', error)
     return NextResponse.json(
       {

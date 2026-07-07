@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { reservationsService } from '@/services/reservations-service'
+import { requireAdmin, UnauthorizedError, unauthorizedResponse } from '@/lib/auth/requireAdmin'
 
 /**
  * GET /api/reservations - Obtener todas las reservas con filtros
@@ -8,6 +9,7 @@ import { reservationsService } from '@/services/reservations-service'
 
 export async function GET(request: NextRequest) {
   try {
+    await requireAdmin()
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '0', 10)
     const limit = parseInt(searchParams.get('limit') || '10', 10)
@@ -34,6 +36,7 @@ export async function GET(request: NextRequest) {
       limit,
     })
   } catch (error) {
+    if (error instanceof UnauthorizedError) return unauthorizedResponse()
     console.error('Error fetching reservations:', error)
     return NextResponse.json(
       {
@@ -47,6 +50,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    await requireAdmin()
     const body = await request.json()
 
     if (!body.canchasdep_id || !body.usuarios_id || !body.fecha_empieza || !body.fecha_termina) {
@@ -76,6 +80,7 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     )
   } catch (error) {
+    if (error instanceof UnauthorizedError) return unauthorizedResponse()
     console.error('Error creating reservation:', error)
     return NextResponse.json(
       {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { courtsService } from '@/services/courts-service'
 import { schedulesService } from '@/services/schedules-service'
+import { requireAdmin, UnauthorizedError, unauthorizedResponse } from '@/lib/auth/requireAdmin'
 
 /**
  * GET /api/courts/[id] - Obtener cancha por ID
@@ -10,6 +11,7 @@ import { schedulesService } from '@/services/schedules-service'
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    await requireAdmin()
     const { id } = await params
     const courtId = parseInt(id, 10)
     const court = await courtsService.getCourtById(courtId)
@@ -23,6 +25,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       data: court,
     })
   } catch (error) {
+    if (error instanceof UnauthorizedError) return unauthorizedResponse()
     console.error('Error fetching court:', error)
     return NextResponse.json(
       {
@@ -36,6 +39,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    await requireAdmin()
     const { id } = await params
     const courtId = parseInt(id, 10)
     const body = await request.json()
@@ -67,6 +71,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       data: updatedCourt,
     })
   } catch (error) {
+    if (error instanceof UnauthorizedError) return unauthorizedResponse()
     console.error('Error updating court:', error)
     return NextResponse.json(
       {
@@ -80,6 +85,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    await requireAdmin()
     const { id } = await params
     const courtId = parseInt(id, 10)
 
@@ -91,6 +97,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       message: 'Cancha eliminada exitosamente (junto a sus reservas, pagos y horarios).',
     })
   } catch (error) {
+    if (error instanceof UnauthorizedError) return unauthorizedResponse()
     console.error('Error deleting court:', error)
     return NextResponse.json(
       {
@@ -101,4 +108,3 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     )
   }
 }
-

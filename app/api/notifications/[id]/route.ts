@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { notificationsService } from '@/services/notifications-service'
+import { requireAdmin, UnauthorizedError, unauthorizedResponse } from '@/lib/auth/requireAdmin'
 
 /**
  * PUT /api/notifications/[id] - Marcar notificación como leída
@@ -8,6 +9,7 @@ import { notificationsService } from '@/services/notifications-service'
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    await requireAdmin()
     const { id } = await params
     const parsedId = parseInt(id, 10)
     const body = await request.json()
@@ -29,6 +31,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       data: updatedNotification,
     })
   } catch (error) {
+    if (error instanceof UnauthorizedError) return unauthorizedResponse()
     console.error('Error updating notification:', error)
     return NextResponse.json(
       {
@@ -42,6 +45,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    await requireAdmin()
     const { id } = await params
     const parsedId = parseInt(id, 10)
 
@@ -52,6 +56,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       message: 'Notificación eliminada exitosamente',
     })
   } catch (error) {
+    if (error instanceof UnauthorizedError) return unauthorizedResponse()
     console.error('Error deleting notification:', error)
     return NextResponse.json(
       {

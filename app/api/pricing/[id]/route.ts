@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pricingService } from '@/services/pricing-service'
+import { requireAdmin, UnauthorizedError, unauthorizedResponse } from '@/lib/auth/requireAdmin'
 
 /**
  * GET /api/pricing/[id] - Obtener tarifa por ID
@@ -9,6 +10,7 @@ import { pricingService } from '@/services/pricing-service'
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    await requireAdmin()
     const { id } = await params
     const parsedId = parseInt(id, 10)
     const tarifa = await pricingService.getTarifaById(parsedId)
@@ -22,6 +24,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       data: tarifa,
     })
   } catch (error) {
+    if (error instanceof UnauthorizedError) return unauthorizedResponse()
     console.error('Error fetching pricing:', error)
     return NextResponse.json(
       {
@@ -35,6 +38,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    await requireAdmin()
     const { id } = await params
     const parsedId = parseInt(id, 10)
     const body = await request.json()
@@ -55,6 +59,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       data: updatedTarifa,
     })
   } catch (error) {
+    if (error instanceof UnauthorizedError) return unauthorizedResponse()
     console.error('Error updating pricing:', error)
     return NextResponse.json(
       {
@@ -68,6 +73,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    await requireAdmin()
     const { id } = await params
     const parsedId = parseInt(id, 10)
 
@@ -78,6 +84,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       message: 'Tarifa eliminada exitosamente',
     })
   } catch (error) {
+    if (error instanceof UnauthorizedError) return unauthorizedResponse()
     console.error('Error deleting pricing:', error)
     return NextResponse.json(
       {

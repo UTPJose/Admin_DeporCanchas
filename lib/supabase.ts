@@ -14,46 +14,8 @@ if (!supabaseServiceRoleKey && typeof window === 'undefined') {
   console.warn('SUPABASE_SERVICE_ROLE_KEY not set. Server-side queries may be restricted by RLS.')
 }
 
-// Create Supabase client - Generic typing for now, specific types will be generated from schema
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
-
-// Server-side client with service role key (for bypassing RLS)
+// Server-side client con service_role (bypassa RLS). Todos los services y
+// Route Handlers usan este cliente — el anon nunca debe usarse para
+// lectura/escritura desde el admin (rompe por RLS, ver CLAUDE.md).
 export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey || supabaseAnonKey)
-
-// Helper functions for common queries
-export async function fetchCampus() {
-  const { data, error } = await supabase.from('campus').select('*')
-  if (error) throw error
-  return data
-}
-
-export async function fetchCourts() {
-  const { data, error } = await supabase.from('canchas_deportivas').select('*')
-  if (error) throw error
-  return data
-}
-
-export async function fetchReservations() {
-  const { data, error } = await supabase
-    .from('reservas')
-    .select('*, usuarios:usuarios_id(*), canchasdep:canchasdep_id(*)')
-  if (error) throw error
-  return data
-}
-
-export async function fetchUsers() {
-  const { data, error } = await supabase.from('usuarios').select('*')
-  if (error) throw error
-  return data
-}
-
-export async function fetchNotifications(userId: number) {
-  const { data, error } = await supabase
-    .from('notificaciones')
-    .select('*')
-    .eq('usuarios_id', userId)
-    .order('creado_en', { ascending: false })
-  if (error) throw error
-  return data
-}
 

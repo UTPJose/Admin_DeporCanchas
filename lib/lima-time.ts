@@ -40,6 +40,13 @@ export function limaMinutes(d: Date | string): number {
   )
 }
 
+/** 'HH:MM' (24h, cero-rellenado) de un instante, en hora Lima. */
+export function limaHM(d: Date | string): string {
+  const hh = String(limaHour(d)).padStart(2, '0')
+  const mm = String(limaMinutes(d)).padStart(2, '0')
+  return `${hh}:${mm}`
+}
+
 /** Suma n días a un 'YYYY-MM-DD' (usa mediodía UTC para evitar bordes de offset). */
 export function addDaysYMD(ymd: string, n: number): string {
   const d = new Date(`${ymd}T12:00:00Z`)

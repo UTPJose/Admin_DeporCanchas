@@ -9,6 +9,7 @@ import { requireAdmin, UnauthorizedError, unauthorizedResponse } from '@/lib/aut
 
 export async function GET(request: NextRequest) {
   try {
+    await requireAdmin()
     const { searchParams } = new URL(request.url)
     const action = searchParams.get('action') || 'availability'
     const courtId = searchParams.get('court_id')
@@ -62,6 +63,7 @@ export async function GET(request: NextRequest) {
       data: response,
     })
   } catch (error) {
+    if (error instanceof UnauthorizedError) return unauthorizedResponse()
     console.error('Error fetching schedules:', error)
     return NextResponse.json(
       {
@@ -248,6 +250,7 @@ export async function PATCH(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    await requireAdmin()
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
 
@@ -265,6 +268,7 @@ export async function DELETE(request: NextRequest) {
       message: 'Horario desbloqueado correctamente',
     })
   } catch (error) {
+    if (error instanceof UnauthorizedError) return unauthorizedResponse()
     console.error('Error deleting schedule:', error)
     return NextResponse.json(
       {

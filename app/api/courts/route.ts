@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { courtsService } from '@/services/courts-service'
 import { schedulesService } from '@/services/schedules-service'
+import { requireAdmin, UnauthorizedError, unauthorizedResponse } from '@/lib/auth/requireAdmin'
 
 /**
  * GET /api/courts - Obtener todas las canchas con filtros opcionales
@@ -9,6 +10,7 @@ import { schedulesService } from '@/services/schedules-service'
 
 export async function GET(request: NextRequest) {
   try {
+    await requireAdmin()
     const { searchParams } = new URL(request.url)
     const campusId = searchParams.get('campus_id')
     const tipoDeporte = searchParams.get('tipo_deporte')
@@ -25,6 +27,7 @@ export async function GET(request: NextRequest) {
       data: courts,
     })
   } catch (error) {
+    if (error instanceof UnauthorizedError) return unauthorizedResponse()
     console.error('Error fetching courts:', error)
     return NextResponse.json(
       {
@@ -38,6 +41,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    await requireAdmin()
     const body = await request.json()
 
     if (!body.campus_id || !body.nombre || !body.tipo_deporte || !body.cantidad_jugadores) {
@@ -81,6 +85,7 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     )
   } catch (error) {
+    if (error instanceof UnauthorizedError) return unauthorizedResponse()
     console.error('Error creating court:', error)
     return NextResponse.json(
       {

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { notificationsService } from '@/services/notifications-service'
+import { requireAdmin, UnauthorizedError, unauthorizedResponse } from '@/lib/auth/requireAdmin'
 
 /**
  * POST /api/notifications/admin/mark-read - Marca como leídas todas las
@@ -8,9 +9,11 @@ import { notificationsService } from '@/services/notifications-service'
  */
 export async function POST() {
   try {
+    await requireAdmin()
     await notificationsService.markAllAdminRead()
     return NextResponse.json({ success: true })
   } catch (error) {
+    if (error instanceof UnauthorizedError) return unauthorizedResponse()
     return NextResponse.json(
       { success: false, error: error instanceof Error ? error.message : 'Error' },
       { status: 500 }

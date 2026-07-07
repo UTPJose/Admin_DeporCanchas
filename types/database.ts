@@ -184,6 +184,9 @@ export interface HistorialReserva {
 // ==================== TIPOS COMPUESTOS ====================
 
 export interface ReservaConDetalles extends Reserva {
+  /** 'HH:MM' hora Lima, calculado server-side desde fecha_empieza/fecha_termina. */
+  hora_inicio?: string
+  hora_fin?: string
   cancha?: CanchaDep & { campus?: Campus }
   usuario?: UsuarioConRol
   pago?: Pago | null

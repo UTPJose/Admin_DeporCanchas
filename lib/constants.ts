@@ -7,7 +7,6 @@ export const SITE_DESCRIPTION = 'Panel administrativo para gestión de canchas d
 
 // API
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
-export const AUTH_SERVICE_URL = process.env.NEXT_PUBLIC_AUTH_SERVICE_URL || 'http://localhost:8080'
 
 // Roles — BD real: 'cliente' y 'admin' (+ legacy 'ROLE_ADMIN'/'ROLE_USER' del antiguo servicio Java).
 export const ROLES = {
@@ -123,7 +122,6 @@ export const ITEMS_PER_PAGE = 10
 export const MAX_ITEMS_PER_PAGE = 100
 
 // Tiempos
-export const TOKEN_REFRESH_INTERVAL = 5 * 60 * 1000 // 5 minutos
 export const REQUEST_TIMEOUT = 10000 // 10 segundos
 
 // Mensajes

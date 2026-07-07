@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { requireAdmin, UnauthorizedError, unauthorizedResponse } from '@/lib/auth/requireAdmin'
 
 /**
  * GET /api/usuarios/search?q=<texto>&limit=<n>
@@ -12,6 +13,13 @@ import { supabaseAdmin } from '@/lib/supabase'
  * - Activos primero; ordenados por nombre.
  */
 export async function GET(request: NextRequest) {
+  try {
+    await requireAdmin()
+  } catch (e) {
+    if (e instanceof UnauthorizedError) return unauthorizedResponse()
+    throw e
+  }
+
   const { searchParams } = new URL(request.url)
   const q = (searchParams.get('q') ?? '').trim()
   const limit = Math.min(20, Math.max(1, parseInt(searchParams.get('limit') || '10', 10)))

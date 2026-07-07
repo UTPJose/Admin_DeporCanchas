@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import { Reserva, ReservaConDetalles, ReservaFilters, SupabasePaginatedResponse } from '@/types/database'
+import { limaHM } from '@/lib/lima-time'
 
 /**
  * Reservations Service - CRUD operations para Reservas
@@ -82,6 +83,10 @@ export const reservationsService = {
       const cancha = canchasMap.get(r.canchasdep_id)
       return {
         ...r,
+        // Hora de pared Lima calculada server-side (única fuente de verdad):
+        // evita que cada consumidor de la API reimplemente la conversión de zona horaria.
+        hora_inicio: limaHM(r.fecha_empieza),
+        hora_fin: limaHM(r.fecha_termina),
         usuario: usuariosMap.get(r.usuarios_id),
         cancha: cancha ? { ...cancha, campus: campusMap.get(cancha.campus_id) ?? null } : null,
         pago: pagosMap.get(r.id),
@@ -138,6 +143,8 @@ export const reservationsService = {
 
     return {
       ...reserva,
+      hora_inicio: limaHM(reserva.fecha_empieza),
+      hora_fin: limaHM(reserva.fecha_termina),
       usuario,
       cancha: cancha ? { ...cancha, campus: campusData } : null,
       pagos: pagos || [],

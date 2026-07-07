@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { reportsService } from '@/services/reports-service'
 import { limaYMD, addDaysYMD, limaToUtcISO } from '@/lib/lima-time'
+import { requireAdmin, UnauthorizedError, unauthorizedResponse } from '@/lib/auth/requireAdmin'
 
 /**
  * GET /api/reports/dashboard - Obtener estadísticas del dashboard
@@ -11,6 +12,7 @@ import { limaYMD, addDaysYMD, limaToUtcISO } from '@/lib/lima-time'
 
 export async function GET(request: NextRequest) {
   try {
+    await requireAdmin()
     const { searchParams } = new URL(request.url)
     const type = searchParams.get('type') || 'dashboard'
     const startDate = searchParams.get('startDate')
@@ -95,6 +97,7 @@ export async function GET(request: NextRequest) {
       data: response,
     })
   } catch (error) {
+    if (error instanceof UnauthorizedError) return unauthorizedResponse()
     console.error('Error fetching report:', error)
     return NextResponse.json(
       {

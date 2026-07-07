@@ -8,8 +8,6 @@ import { estadoMostrado, pasaFiltro, type FiltroReserva } from '@/lib/estado-res
 const LIMA_TZ = 'America/Lima'
 const fmtFecha = (iso: string) =>
   new Intl.DateTimeFormat('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: LIMA_TZ }).format(new Date(iso))
-const fmtHora = (iso: string) =>
-  new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: LIMA_TZ }).format(new Date(iso))
 
 /** Parsea "0-50" / "50-100" / "200+" / "" → [min, max] (max Infinity si "+"). */
 const parsePriceRange = (s?: string): [number, number] => {
@@ -96,7 +94,7 @@ export default function ReservacionesPage() {
         campus_nombre: r.cancha?.campus?.nombre || '—',
         cancha_nombre: r.cancha?.nombre || '—',
         fechaLabel: fmtFecha(r.fecha_empieza),
-        horaLabel: `${fmtHora(r.fecha_empieza)} - ${fmtHora(r.fecha_termina)}`,
+        horaLabel: `${r.hora_inicio} - ${r.hora_fin}`,
         metodoPago: r.pago?.metodo_pago || null,
         precio: r.precio_total,
         estado: estadoMostrado(r.estado, r.fecha_termina),
@@ -143,7 +141,7 @@ export default function ReservacionesPage() {
   const handleCancel = async (id: number) => {
     if (!confirm('¿Cancelar esta reservación? El horario quedará libre.')) return
     try {
-      const res = await fetch(`/api/reservations/${id}`, { method: 'DELETE' })
+      const res = await fetch(`/api/reservations/${id}`, { method: 'PATCH' })
       if (!res.ok) throw new Error('Error al cancelar')
       fetchReservations()
     } catch (err) {

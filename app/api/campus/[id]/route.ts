@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { campusService } from '@/services/campus-service'
+import { requireAdmin, UnauthorizedError, unauthorizedResponse } from '@/lib/auth/requireAdmin'
 
 /**
  * GET /api/campus/[id] - Obtener campus por ID
@@ -9,6 +10,7 @@ import { campusService } from '@/services/campus-service'
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    await requireAdmin()
     const { id } = await params
     const campusId = parseInt(id, 10)
     const campus = await campusService.getCampusById(campusId)
@@ -22,6 +24,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       data: campus,
     })
   } catch (error) {
+    if (error instanceof UnauthorizedError) return unauthorizedResponse()
     console.error('Error fetching campus:', error)
     return NextResponse.json(
       {
@@ -35,6 +38,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    await requireAdmin()
     const { id } = await params
     const campusId = parseInt(id, 10)
     const body = await request.json()
@@ -47,6 +51,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       data: updatedCampus,
     })
   } catch (error) {
+    if (error instanceof UnauthorizedError) return unauthorizedResponse()
     console.error('Error updating campus:', error)
     return NextResponse.json(
       {
@@ -60,6 +65,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    await requireAdmin()
     const { id } = await params
     const campusId = parseInt(id, 10)
 
@@ -70,6 +76,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       message: 'Campus eliminado exitosamente',
     })
   } catch (error) {
+    if (error instanceof UnauthorizedError) return unauthorizedResponse()
     console.error('Error deleting campus:', error)
     return NextResponse.json(
       {
@@ -80,4 +87,3 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     )
   }
 }
-

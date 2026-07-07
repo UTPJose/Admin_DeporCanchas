@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pricingService } from '@/services/pricing-service'
+import { requireAdmin, UnauthorizedError, unauthorizedResponse } from '@/lib/auth/requireAdmin'
 
 /**
  * GET  /api/pricing?court_id=  - Reglas de una cancha (ordenadas por prioridad)
@@ -22,10 +23,12 @@ function ruleInput(body: any) {
 
 export async function GET(request: NextRequest) {
   try {
+    await requireAdmin()
     const courtId = new URL(request.url).searchParams.get('court_id')
     const data = courtId ? await pricingService.getCourtPricingRules(parseInt(courtId, 10)) : []
     return NextResponse.json({ success: true, data })
   } catch (error) {
+    if (error instanceof UnauthorizedError) return unauthorizedResponse()
     return NextResponse.json(
       { success: false, error: error instanceof Error ? error.message : 'Error al obtener tarifas' },
       { status: 500 }
@@ -35,6 +38,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    await requireAdmin()
     const body = await request.json()
     if (body.precio === undefined || body.precio === null || Number.isNaN(Number(body.precio))) {
       return NextResponse.json({ success: false, error: 'Precio requerido' }, { status: 400 })
@@ -55,6 +59,7 @@ export async function POST(request: NextRequest) {
     const data = await pricingService.createCourtPricingRule(Number(body.court_id), input)
     return NextResponse.json({ success: true, data }, { status: 201 })
   } catch (error) {
+    if (error instanceof UnauthorizedError) return unauthorizedResponse()
     return NextResponse.json(
       { success: false, error: error instanceof Error ? error.message : 'Error al crear tarifa' },
       { status: 500 }

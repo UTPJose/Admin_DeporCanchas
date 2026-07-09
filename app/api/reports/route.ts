@@ -1,22 +1,51 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { reportsService } from '@/services/reports-service'
 import { limaYMD, addDaysYMD, limaToUtcISO } from '@/lib/lima-time'
-import { requireAdmin, UnauthorizedError, unauthorizedResponse } from '@/lib/auth/requireAdmin'
+import {
+  requireAdmin,
+  requireSuperAdmin,
+  UnauthorizedError,
+  ForbiddenError,
+  unauthorizedResponse,
+  forbiddenResponse,
+} from '@/lib/auth/requireAdmin'
 
 /**
- * GET /api/reports/dashboard - Obtener estadísticas del dashboard
- * GET /api/reports/revenue - Obtener ingresos por período
- * GET /api/reports/by-deport - Obtener reservas por deporte
- * GET /api/reports/by-property - Obtener ingresos por cancha
+ * GET /api/reports/dashboard - Obtener estadísticas del dashboard (cualquier admin)
+ * GET /api/reports/by-deport - Reservas por deporte, usado en el dashboard (cualquier admin)
+ * GET /api/reports/revenue - Ingresos por período:
+ *   - solo `period` (sin startDate/endDate): resumen rápido del dashboard, cualquier admin.
+ *   - con startDate/endDate: análisis detallado de la página /reportes, SOLO super-admin.
+ * GET /api/reports/by-property, /top-users, /compare - Análisis avanzado, SOLO super-admin
+ * (misma restricción que gestionar administradores, ver lib/auth/requireAdmin.ts).
  */
+
+const SUPER_ADMIN_ONLY_TYPES = new Set(['by-property', 'top-users', 'compare'])
 
 export async function GET(request: NextRequest) {
   try {
-    await requireAdmin()
     const { searchParams } = new URL(request.url)
     const type = searchParams.get('type') || 'dashboard'
     const startDate = searchParams.get('startDate')
     const endDate = searchParams.get('endDate')
+
+    // La página /reportes (análisis detallado) exige super-admin; el dashboard
+    // general (type=dashboard/by-deport, o revenue sin rango de fechas) queda
+    // abierto a cualquier admin.
+    const esAnalisisDetallado =
+      SUPER_ADMIN_ONLY_TYPES.has(type) || (type === 'revenue' && !!startDate && !!endDate)
+
+    try {
+      if (esAnalisisDetallado) {
+        await requireSuperAdmin()
+      } else {
+        await requireAdmin()
+      }
+    } catch (e) {
+      if (e instanceof UnauthorizedError) return unauthorizedResponse()
+      if (e instanceof ForbiddenError) return forbiddenResponse()
+      throw e
+    }
 
     let response: any
 

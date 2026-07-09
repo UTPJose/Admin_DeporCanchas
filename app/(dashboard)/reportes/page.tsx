@@ -6,7 +6,8 @@ import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { ReportsFilterBar } from '@/components/reportes/ReportsFilterBar'
 import { RevenueCard } from '@/components/reportes/RevenueCard'
 import dynamic from 'next/dynamic'
-import { Download, FileText } from 'lucide-react'
+import { Download, FileText, ShieldAlert } from 'lucide-react'
+import { useAuth } from '@/hooks/useAuth'
 
 const RevenueChart = dynamic(
   () => import('@/components/reportes/RevenueChart').then((m) => ({ default: m.RevenueChart })),
@@ -29,6 +30,8 @@ interface ReportData {
 }
 
 export default function ReportesPage() {
+  const { user, isLoading: authLoading } = useAuth()
+  const isSuper = !!user?.isSuper
   const [period, setPeriod] = useState<'day' | 'week' | 'month'>('month')
   const [startDate, setStartDate] = useState(getDefaultStartDate())
   const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0])
@@ -296,8 +299,9 @@ export default function ReportesPage() {
   }
 
   useEffect(() => {
+    if (!isSuper) return
     fetchReportData()
-  }, [period, startDate, endDate])
+  }, [period, startDate, endDate, isSuper])
 
   const fetchReportData = async () => {
     setLoading(true)
@@ -333,6 +337,28 @@ export default function ReportesPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <LoadingSpinner />
+      </div>
+    )
+  }
+
+  if (!isSuper) {
+    return (
+      <Card>
+        <div className="flex flex-col items-center gap-3 py-16 text-center">
+          <ShieldAlert className="w-10 h-10 text-amber-500" />
+          <h2 className="text-lg font-semibold text-gray-900">Acceso restringido</h2>
+          <p className="text-gray-600 max-w-sm">
+            Reportes y Análisis es solo para el super-administrador.
+          </p>
+        </div>
+      </Card>
+    )
   }
 
   return (

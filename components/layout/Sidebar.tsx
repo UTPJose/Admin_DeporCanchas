@@ -32,7 +32,11 @@ const iconMap: Record<string, React.ReactNode> = {
 
 export function Sidebar() {
   const pathname = usePathname()
-  const { logout } = useAuth()
+  const { user, logout } = useAuth()
+  const isSuper = !!user?.isSuper
+  // Reportes y Análisis es solo para el super-admin (misma restricción que
+  // gestionar administradores en Configuración).
+  const menuItems = MENU_ITEMS.filter((item) => isSuper || item.href !== RUTAS.REPORTES)
   // Guard anti doble-click mientras se cierra sesión.
   const [loggingOut, setLoggingOut] = useState(false)
 
@@ -56,7 +60,7 @@ export function Sidebar() {
 
       {/* Navigation Menu */}
       <nav className="p-4 space-y-2">
-        {MENU_ITEMS.map((item) => {
+        {menuItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href)
           return (
             <Link
